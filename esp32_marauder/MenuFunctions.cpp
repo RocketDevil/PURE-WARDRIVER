@@ -1688,6 +1688,8 @@ bool MenuFunctions::isKeyPressed(char c)
 
 #ifdef HAS_DIRECT_UPLOAD
   void MenuFunctions::buildUploadFileMenu() {
+    // PURE WARDRIVER: (re)connect upload WiFi so SYNC is ready on entry.
+    wifi_scan_obj.autoConnectUploadWiFi();
     if (sd_obj.supported) {
       this->setupSDFileList();
 
@@ -1813,22 +1815,16 @@ bool MenuFunctions::isKeyPressed(char c)
     display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
     display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
 
-    if (settings_obj.getSavedWifiCount() == 0) {
-      display_obj.tft.println("WiFi Credentials Empty.");
-      display_obj.tft.println("Returning...");
-      display_obj.tft.setTextWrap(false);
-      delay(2000);
-      this->changeMenu(&fileActionMenu, true);
-      return;
-    }
-
-    if (!wifi_scan_obj.joinSavedWiFi(true)) {
-      display_obj.tft.println("Could not connect to WiFi.");
-      display_obj.tft.println("Returning...");
-      display_obj.tft.setTextWrap(false);
-      delay(2000);
-      this->changeMenu(&fileActionMenu, true);
-      return;
+    // PURE WARDRIVER: existing link first, then SD file creds, then SavedWiFi.
+    if (!wifi_scan_obj.wifi_connected) {
+      if (!wifi_scan_obj.autoConnectUploadWiFi() && !wifi_scan_obj.joinSavedWiFi(true)) {
+        display_obj.tft.println("Could not connect to WiFi.");
+        display_obj.tft.println("Returning...");
+        display_obj.tft.setTextWrap(false);
+        delay(2000);
+        this->changeMenu(&fileActionMenu, true);
+        return;
+      }
     }
 
     delay(1000);

@@ -360,6 +360,10 @@ void setup()
 
   wifi_scan_obj.RunSetup();
 
+  // PURE WARDRIVER: API keys + upload WiFi from SD card (if present).
+  wifi_scan_obj.loadUploadApiKeys();
+  wifi_scan_obj.autoConnectUploadWiFi();
+
   #ifdef HAS_T_DONGLE_DISPLAY
     t_dongle_display.begin();
   #endif

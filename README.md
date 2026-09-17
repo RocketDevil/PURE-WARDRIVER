@@ -39,12 +39,28 @@ Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 
 ## First run
 
-1. Wait for GPS fix.
-2. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
-3. Press **STOP** (5s guard against double-taps) to stop.
-4. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
-5. Set credentials via serial CLI first:
-   `settings` (`wu`, `wt`, `wdg_key`), `join -s` (Saved WiFi).
+1. Put two files on the microSD card (root directory):
+   `wifi-upload-credentials.txt`:
+   ```
+   ssid=YourWiFiName
+   pass=YourWiFiPassword
+   ```
+   API keys, either as `API.txt`:
+   ```
+   wdg_key=YOUR_WDGWARS_KEY
+   wu=YOUR_WIGLE_USERNAME
+   wt=YOUR_WIGLE_TOKEN
+   ```
+   or as three single-value files (same effect):
+   `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
+   (each file holds just the key, nothing else).
+2. Power on: the firmware loads the API keys and connects to your WiFi
+   right away to verify the link. If no upload starts within 5 minutes,
+   WiFi switches off again to save battery — opening SYNC reconnects.
+3. Wait for GPS fix.
+4. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
+5. Press **STOP** (5s guard against double-taps) to stop.
+6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
 
 ## Attribution / License
 

@@ -1,0 +1,7 @@
+# Upload API keys for PURE WARDRIVER (copy to microSD as "API.txt",
+# then adjust values). Lines starting with # are ignored.
+# wdg_key: your WDGWars API key (profile on wdgwars.pl).
+# wu/wt:   your WiGLE username / API token.
+wdg_key=YOUR_WDGWARS_KEY
+wu=YOUR_WIGLE_USERNAME
+wt=YOUR_WIGLE_TOKEN

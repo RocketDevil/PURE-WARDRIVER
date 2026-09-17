@@ -234,6 +234,12 @@
 #define WDG_UPLOAD   1
 #define BOTH_UPLOAD  2
 
+// PURE WARDRIVER: SD upload credentials.
+#define UPLOAD_WIFI_FILE "/wifi-upload-credentials.txt"
+#define UPLOAD_API_FILE "/API.txt"
+#define UPLOAD_WIFI_IDLE_MS (5UL * 60UL * 1000UL)
+#define UPLOAD_WIFI_RETRY_MS (30UL * 1000UL)
+
 // Pure Wardrive: EvilPortal removed.
 
 #ifdef HAS_SCREEN
@@ -957,6 +963,18 @@ class WiFiScan
     wifi_config_t ap_config;
 
     bool uploadFile(String filePath, bool retry = false, uint8_t upload_type = WIGLE_UPLOAD);
+    // PURE WARDRIVER: SD upload credentials (/wifi-upload-credentials.txt
+    // with ssid=/pass=, /API.txt with wdg_key=/wu=/wt=). Auto-connect at
+    // boot, disconnect after 5 min idle, reconnect on upload menu.
+    bool upload_wifi_auto = false;
+    bool upload_active = false;
+    uint32_t upload_link_ms = 0;
+    uint32_t upload_last_try_ms = 0;
+    bool hasUploadCredentialsFile();
+    bool loadUploadCredentials(String &ssid, String &pass);
+    bool loadUploadApiKeys();
+    bool autoConnectUploadWiFi();
+    void autoDisconnectUploadWiFi(uint32_t now);
     String checkEmptyProbe(String essid);
     bool checkFlockOUI(const uint8_t mac[6]);
     bool startWiFi(String ssid, String password, bool gui = true);

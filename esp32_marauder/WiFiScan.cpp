@@ -1861,7 +1861,7 @@ void WiFiScan::RunSetup() {
         }
 
         if (settings_obj.saveSetting<bool>("wu", contents)) {
-          sd_obj.removeFile("/wigle_api_name.txt");
+          // PURE WARDRIVER: key file stays on SD as persistent config.
           Serial.println("Saved WiGLE API Name: " + contents);
         } else {
           Serial.println("Failed to save WiGLE API Name");
@@ -1885,7 +1885,7 @@ void WiFiScan::RunSetup() {
         }
 
         if (settings_obj.saveSetting<bool>("wt", contents)) {
-          sd_obj.removeFile("/wigle_api_token.txt");
+          // PURE WARDRIVER: key file stays on SD as persistent config.
           Serial.println("Saved WiGLE API Token: " + contents);
         } else {
           Serial.println("Failed to save WiGLE API Token");
@@ -1910,7 +1910,7 @@ void WiFiScan::RunSetup() {
         }
 
         if (settings_obj.saveSetting<bool>(WDG_KEY_NAME, contents)) {
-          sd_obj.removeFile("/wdg_key.txt");
+          // PURE WARDRIVER: key file stays on SD as persistent config.
           Serial.println("Saved WDG API Token: " + contents);
         } else {
           Serial.println("Failed to save WDG API Token");
@@ -11606,6 +11606,167 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     }
   }
 
+  // ---- PURE WARDRIVER SD upload credentials ----
+  static String trimUploadCredValue(String v) {
+    v.trim();
+    if (v.length() >= 2 && ((v.charAt(0) == '"' && v.charAt(v.length() - 1) == '"') ||
+        (v.charAt(0) == '\'' && v.charAt(v.length() - 1) == '\'')))
+      v = v.substring(1, v.length() - 1);
+    v.trim();
+    return v;
+  }
+
+  bool WiFiScan::hasUploadCredentialsFile() {
+    #ifdef HAS_SD
+      if (!sd_obj.supported) return false;
+      File f = sd_obj.getFile(UPLOAD_WIFI_FILE);
+      bool ok = (bool)f;
+      if (ok) f.close();
+      return ok;
+    #else
+      return false;
+    #endif
+  }
+
+  bool WiFiScan::loadUploadCredentials(String &ssid, String &pass) {
+    ssid = "";
+    pass = "";
+    #ifdef HAS_SD
+      if (!sd_obj.supported) return false;
+      File f = sd_obj.getFile(UPLOAD_WIFI_FILE);
+      if (!f) return false;
+      while (f.available()) {
+        String line = f.readStringUntil('\n');
+        line.trim();
+        if (line.length() == 0 || line.charAt(0) == '#') continue;
+        int eq = line.indexOf('=');
+        if (eq <= 0) continue;
+        String key = line.substring(0, eq);
+        key.trim();
+        key.toLowerCase();
+        String val = trimUploadCredValue(line.substring(eq + 1));
+        if (key == "ssid") ssid = val;
+        else if (key == "pass" || key == "password") pass = val;
+      }
+      f.close();
+    #endif
+    return ssid.length() > 0;
+  }
+
+  // Store one API key, but only on change (spares SPIFFS flash wear).
+  static bool applyUploadApiKey(const char* skey, String val) {
+    val.trim();
+    if (val.length() == 0) return false;
+    String cur = settings_obj.loadSetting<String>(skey);
+    if (cur != val) {
+      settings_obj.saveSetting<bool>(skey, val);
+      Serial.println(String("[UPLOAD] API key stored: ") + skey);
+    }
+    return true;
+  }
+
+  // Read a single-value key file (whole content, e.g. wdg_key.txt).
+  static String readUploadKeyFile(const char* path) {
+    String contents = "";
+    #ifdef HAS_SD
+      File f = sd_obj.getFile(path);
+      if (!f) return contents;
+      while (f.available())
+        contents += (char)f.read();
+      f.close();
+    #endif
+    contents.trim();
+    return contents;
+  }
+
+  bool WiFiScan::loadUploadApiKeys() {
+    #ifdef HAS_SD
+      if (!sd_obj.supported) return false;
+      bool any = false;
+      File f = sd_obj.getFile(UPLOAD_API_FILE);
+      if (!f) {
+        Serial.println(F("[UPLOAD] No /API.txt on SD, trying single key files"));
+      }
+      else {
+        while (f.available()) {
+          String line = f.readStringUntil('\n');
+          line.trim();
+          if (line.length() == 0 || line.charAt(0) == '#') continue;
+          int eq = line.indexOf('=');
+          if (eq <= 0) continue;
+          String key = line.substring(0, eq);
+          key.trim();
+          key.toLowerCase();
+          String val = trimUploadCredValue(line.substring(eq + 1));
+          if (val.length() == 0) continue;
+          const char* skey = nullptr;
+          if (key == "wdg_key") skey = WDG_KEY_NAME;
+          else if (key == "wu" || key == "wigle_user") skey = "wu";
+          else if (key == "wt" || key == "wigle_token") skey = "wt";
+          if (skey != nullptr && applyUploadApiKey(skey, val))
+            any = true;
+        }
+        f.close();
+      }
+      // Single-value fallback files (kept on SD, re-read every boot).
+      if (applyUploadApiKey(WDG_KEY_NAME, readUploadKeyFile("/wdg_key.txt")))
+        any = true;
+      if (applyUploadApiKey("wu", readUploadKeyFile("/wigle_api_name.txt")))
+        any = true;
+      if (applyUploadApiKey("wt", readUploadKeyFile("/wigle_api_token.txt")))
+        any = true;
+      return any;
+    #else
+      return false;
+    #endif
+  }
+
+  bool WiFiScan::autoConnectUploadWiFi() {
+    if (this->wifi_connected) {
+      this->upload_wifi_auto = true;
+      this->upload_link_ms = millis();
+      return true;
+    }
+    // Cooldown to avoid a 10s connect stall on every SYNC open out of range.
+    // upload_last_try_ms == 0 means "never tried" (e.g. boot): always try.
+    if (this->upload_last_try_ms != 0 &&
+        (millis() - this->upload_last_try_ms) < UPLOAD_WIFI_RETRY_MS)
+      return false;
+    this->upload_last_try_ms = millis();
+    String ssid, pass;
+    if (!this->loadUploadCredentials(ssid, pass)) {
+      Serial.println(F("[UPLOAD] No upload WiFi credentials on SD"));
+      return false;
+    }
+    Serial.println(String("[UPLOAD] Auto-connecting to ") + ssid);
+    // gui=false: serial dots only; save_credential=false: SD file stays master.
+    if (this->joinWiFi(ssid, pass, false, false)) {
+      this->upload_wifi_auto = true;
+      this->upload_link_ms = millis();
+      Serial.println(F("[UPLOAD] Upload WiFi ready"));
+      return true;
+    }
+    this->upload_wifi_auto = false;
+    return false;
+  }
+
+  void WiFiScan::autoDisconnectUploadWiFi(uint32_t now) {
+    if (!this->upload_wifi_auto || this->upload_active) return;
+    if (!this->wifi_connected) {
+      this->upload_wifi_auto = false;
+      return;
+    }
+    // Never disturb a running session, only idle menu time.
+    if (this->currentScanMode != WIFI_SCAN_OFF &&
+        this->currentScanMode != WIFI_CONNECTED) return;
+    if ((now - this->upload_link_ms) >= UPLOAD_WIFI_IDLE_MS) {
+      Serial.println(F("[UPLOAD] 5min idle: upload WiFi off to save battery"));
+      WiFi.disconnect(true);
+      delay(50);
+      this->upload_wifi_auto = false;
+    }
+  }
+
   bool WiFiScan::uploadFile(String filePath, bool retry, uint8_t upload_type) {
     #ifdef HAS_SCREEN
     display_obj.clearScreen();
@@ -11615,6 +11776,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     
     Serial.println("[UPLOAD] uploadFile: " + filePath +
                 (retry ? " (retry)" : ""));
+    this->upload_active = true;
 
     bool wigle_already = !retry && this->sidecarExists(filePath, "wigle");
     bool wdg_already   = !retry && this->sidecarExists(filePath, "wdg");
@@ -11652,14 +11814,16 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       }
     }
 
+    bool result = false;
     if (upload_type == WIGLE_UPLOAD)
-      return wigle_ok;
+      result = wigle_ok;
     else if (upload_type == WDG_UPLOAD)
-      return wdg_ok;
+      result = wdg_ok;
     else if (upload_type == BOTH_UPLOAD)
-      return wigle_ok && wdg_ok;
-    
-    return false;
+      result = wigle_ok && wdg_ok;
+
+    this->upload_active = false;
+    return result;
   }
 
   // Upload one log file to WDG Wars.
@@ -12253,6 +12417,8 @@ void WiFiScan::runFoxHunt(uint32_t currentTime) {
 
 void WiFiScan::main(uint32_t currentTime)
 {
+  // PURE WARDRIVER: drop idle upload WiFi after 5min to save battery.
+  this->autoDisconnectUploadWiFi(currentTime);
   // WiFi operations
 #if 0 // Pure Wardrive: pentest main dispatch removed.
   if ((currentScanMode == WIFI_SCAN_PROBE) ||
