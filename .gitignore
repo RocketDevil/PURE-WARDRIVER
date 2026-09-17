@@ -16,3 +16,5 @@ arduino-data/
 *.elf
 *.map
 
+V8_DisplayPinScanner/build/
+
