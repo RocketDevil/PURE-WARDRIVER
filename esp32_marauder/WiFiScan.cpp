@@ -11650,13 +11650,25 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       }
       f.close();
     #endif
+    // Reject untouched placeholders (files are shipped in the repo as copy templates).
+    if (ssid == "YourWiFiName" || pass == "YourWiFiPassword") {
+      Serial.println(F("[UPLOAD] Credentials file still has placeholder values"));
+      ssid = "";
+      pass = "";
+      return false;
+    }
     return ssid.length() > 0;
   }
 
   // Store one API key, but only on change (spares SPIFFS flash wear).
+  // Untouched "YOUR_..." placeholders from the repo templates are ignored.
   static bool applyUploadApiKey(const char* skey, String val) {
     val.trim();
     if (val.length() == 0) return false;
+    if (val.startsWith("YOUR_")) {
+      Serial.println(String("[UPLOAD] API key still placeholder: ") + skey);
+      return false;
+    }
     String cur = settings_obj.loadSetting<String>(skey);
     if (cur != val) {
       settings_obj.saveSetting<bool>(skey, val);

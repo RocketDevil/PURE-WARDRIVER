@@ -39,7 +39,8 @@ Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 
 ## First run
 
-1. Put two files on the microSD card (root directory):
+1. Copy the ready-made files from this repo onto the microSD card
+   (root directory) and fill in your values:
    `wifi-upload-credentials.txt`:
    ```
    ssid=YourWiFiName
@@ -54,6 +55,7 @@ Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
    or as three single-value files (same effect):
    `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
    (each file holds just the key, nothing else).
+   Untouched `YOUR_...` placeholders are ignored by the firmware.
 2. Power on: the firmware loads the API keys and connects to your WiFi
    right away to verify the link. If no upload starts within 5 minutes,
    WiFi switches off again to save battery — opening SYNC reconnects.
