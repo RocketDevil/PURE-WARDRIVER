@@ -30,7 +30,8 @@
 
 //#include <WiFi.h>
 #include <ESP32Ping.h>
-#include "EvilPortal.h"
+// Pure Wardriving: EvilPortal removed. Shared types live in MarauderTypes.h.
+#include "MarauderTypes.h"
 #include <math.h>
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -233,7 +234,7 @@
 #define WDG_UPLOAD   1
 #define BOTH_UPLOAD  2
 
-extern EvilPortal evil_portal_obj;
+// Pure Wardrive: EvilPortal removed.
 
 #ifdef HAS_SCREEN
   extern Display display_obj;
@@ -428,12 +429,7 @@ class WiFiScan
       uint16_t packet_monitor_beacons[PACKET_MONITOR_HISTORY_LEN] = {};
       uint16_t packet_monitor_deauths[PACKET_MONITOR_HISTORY_LEN] = {};
       uint16_t packet_monitor_probes[PACKET_MONITOR_HISTORY_LEN] = {};
-      void resetPacketMonitorGraph();
-      void samplePacketMonitorGraph();
-      void drawPacketMonitorGraph(const uint16_t *values, int16_t top, int16_t bottom,
-                                  uint16_t color, const char *label);
-      void drawPacketMonitorGraphs();
-      void drawPacketMonitorControls();
+      // Pure Wardrive: packet-monitor methods removed.
     #endif
 
     bool wsl_bypass_enabled = false;
@@ -469,32 +465,7 @@ class WiFiScan
       NimBLEClient* nimbleClient;
     #endif
 
-    const char* rick_roll[8] = {
-      "01 Never gonna give you up",
-      "02 Never gonna let you down",
-      "03 Never gonna run around",
-      "04 and desert you",
-      "05 Never gonna make you cry",
-      "06 Never gonna say goodbye",
-      "07 Never gonna tell a lie",
-      "08 and hurt you"
-    };
-
-    // H4W9 added Funny Beacon Spam
-    const char* funny_beacon[12] = {
-      "Abraham Linksys",
-      "Benjamin FrankLAN",
-      "Dora the Internet Explorer",
-      "FBI Surveillance Van 4",
-      "Get Off My LAN",
-      "Loading...",
-      "Martin Router King",
-      "404 Wi-Fi Unavailable",
-      "Test Wi-Fi Please Ignore",
-      "This LAN is My LAN",
-      "Titanic Syncing",
-      "Winternet is Coming"
-    };
+    // Pure Wardrive: rickroll/funny-beacon spam removed.
 
     char* prefix = "G";
 
@@ -687,16 +658,7 @@ class WiFiScan
                               0x00,                               // SSID length      
                           };
 
-    enum EBLEPayloadType
-    {
-      Microsoft,
-      Apple,
-      Samsung,
-      Google,
-      FlipperZero,
-      Airtag,
-      Apple2
-    };
+    // Pure Wardrive: BLE-spam payload types removed.
 
       #ifdef HAS_BT
 
@@ -715,19 +677,10 @@ class WiFiScan
       WatchModel* watch_models = nullptr;
 
       static void scanCompleteCB(BLEScanResults scanResults);
-      NimBLEAdvertisementData GetUniversalAdvertisementData(EBLEPayloadType type);
+      // Pure Wardrive: GetUniversalAdvertisementData removed.
     #endif
 
-    #ifdef HAS_NIMBLE_2
-      int connectAndProcessTracker(NimBLEAddress& address);
-      bool backendFindMySound(NimBLEAddress& address, bool gui = false);
-      bool sendAirtagSoundCommand(NimBLEClient* currentClient);
-      bool sendFmnaSoundCommand(NimBLEClient* currentClient);
-      bool sendDultSoundCommand(NimBLEClient* currentClient);
-      bool enableTrackerResponses(NimBLERemoteCharacteristic* characteristic);
-      void createNimbleClient();
-      void initializeFindMyScan();
-    #endif
+    // Pure Wardrive: FindMy decls removed.
 
     bool wigleUpload(String filePath);
     bool wdgwarsUpload(String filePath);
@@ -737,35 +690,24 @@ class WiFiScan
       void drawUploadProgress(const char* service, uint8_t percent, bool waiting = false);
     #endif
 
-    void runFoxHunt(uint32_t currentTime);
+    // Pure Wardrive: foxhunt/attack UI decls removed.
     void throwThatShitInACircle();
-    void displayTargetFilter();
-    void displayTransmitRate();
-    void prepareScanStage(uint16_t color_1, uint16_t color_2);
+    // Pure Wardrive: scanner stage decls removed.
     void setLEDMode(int mode);
     void setWiFiMode(wifi_mode_t mode, wifi_promiscuous_cb_t cb);
-    void writeNetworkInfo();
     void setupScanDisplayArea(uint16_t background, uint16_t color);
-    void updateTrackerUI();
+    // Pure Wardrive: scanner UI decls removed.
     void showNetworkInfo(bool show_display = true);
     void resetNetworkScanDisplay(const String& target_line, const String& status_line);
     void addNetworkScanDisplayResult(const String& result_line);
     void finishNetworkScanDisplay(const String& result_label);
     void setNetworkInfo();
-    void fullARP();
-    bool readARP(IPAddress targ_ip);
-    bool singleARP(IPAddress ip_addr);
-    void pingScan(uint8_t scan_mode = WIFI_PING_SCAN);
-    void portScan(uint8_t scan_mode = WIFI_PORT_SCAN_ALL, uint16_t targ_port = 22);
-    IPAddress advanceScanIP();
-    bool isHostAlive(IPAddress ip);
-    bool checkHostPort(IPAddress ip, uint16_t port, uint16_t timeout = 100);
+    // Pure Wardrive: port/ping scan decls removed.
     String extractManufacturer(const uint8_t* payload);
     int checkMatchAP(char addr[], bool update_ap = true);
     uint8_t getSecurityType(const uint8_t* beacon, uint16_t len);
-    void addAnalyzerValue(int16_t value, int rssi_avg, int16_t target_array[], int array_size);
     bool mac_cmp(struct mac_addr addr1, struct mac_addr addr2);
-    bool mac_cmp(uint8_t addr1[6], uint8_t addr2[6]);
+    // Pure Wardrive: u8 mac_cmp removed (SAE-only).
     // POI tagging during wardrive
     File poiFile;
     bool poiFileOpen = false;
@@ -775,54 +717,22 @@ class WiFiScan
     void closePoiFile();
 
     void executeWarDrive();
-    void executeBLESpam(EBLEPayloadType type);
+    // Pure Wardrive: attack/BLE-spam decls removed.
     void startWardriverWiFi();
-    void saeAttackLoop(uint32_t currentTime);
-    void processPwnagotchiBeacon(const uint8_t* frame, int length);
-
-    void startWiFiAttacks(uint8_t scan_mode, uint16_t color, const char* title_string);
-
-    void signalAnalyzerLoop(uint32_t tick);
-    void channelActivityLoop(uint32_t tick);
-    void packetRateLoop(uint32_t tick);
-    void packetMonitorMain(uint32_t currentTime);
-    void updateMidway();
-    bool sendSAECommitFrame(uint8_t* targ_addr, uint8_t* src_addr) ;
-    void sendProbeAttack(uint32_t currentTime);
-    void sendBadMsgAttack(uint32_t currentTime, bool all = false);
-    void sendAssocSleepAttack(uint32_t currentTime, bool all = false);
-    void sendDeauthFrame(uint8_t bssid[6], int channel, uint8_t mac[6]);
-    void sendEapolBagMsg1(uint8_t bssid[6], int channel, uint8_t mac[6], uint8_t sec = WIFI_SECURITY_WPA2);
-    void sendAssociationSleep(const char* ESSID, uint8_t bssid[6], int channel, uint8_t mac[6]);
-    void broadcastRandomSSID(uint32_t currentTime);
     void broadcastCustomBeacon(uint32_t current_time, ssid custom_ssid, bool for_camera = false);
     void broadcastCustomBeacon(uint32_t current_time, AccessPoint custom_ssid, int scan_mode);
     void broadcastSetSSID(uint32_t current_time, const char* ESSID, uint8_t chan = 0, bool legit = false);
-    void executeFindMyLive(uint32_t current_time);
-    void RunAPScan(uint8_t scan_mode, uint16_t color);
+    // Pure Wardrive: pentest scan decls removed (incl. executeFindMyLive).
     void RunGPSNmea();
-    void RunPwnScan(uint8_t scan_mode, uint16_t color);
-    void RunPineScan(uint8_t scan_mode, uint16_t color);
-    void RunMultiSSIDScan(uint8_t scan_mode, uint16_t color);
     void RunBeaconScan(uint8_t scan_mode, uint16_t color);
-    void RunRawScan(uint8_t scan_mode, uint16_t color);
-    void RunDeauthScan(uint8_t scan_mode, uint16_t color);
-    void RunEapolScan(uint8_t scan_mode, uint16_t color);
-    void RunProbeScan(uint8_t scan_mode, uint16_t color);
-    void RunSAEScan(uint8_t scan_mode, uint16_t color);
-    void RunPacketMonitor(uint8_t scan_mode, uint16_t color);
     void RunBluetoothScan(uint8_t scan_mode, uint16_t color);
-    void RunSourApple(uint8_t scan_mode, uint16_t color);
-    void RunFindMyLive(uint8_t scan_mode, uint16_t color);
-    void RunSwiftpairSpam(uint8_t scan_mode, uint16_t color);
-    void RunEvilPortal(uint8_t scan_mode, uint16_t color);
-    void RunPingScan(uint8_t scan_mode, uint16_t color);
-    void RunPortScanAll(uint8_t scan_mode, uint16_t color);
+    // Pure Wardrive: pentest scan decls removed (RunSourApple, RunFindMyLive,
+    // RunSwiftpairSpam, RunEvilPortal, RunPingScan, RunPortScanAll).
     bool checkMem();
     void writeHeader(bool poi = false);
     void writeFooter(bool poi = false);
     void displayWardriveStats();
-    void displayAPStats();
+    // Pure Wardrive: displayAPStats removed.
 
 
   public:
@@ -855,7 +765,15 @@ class WiFiScan
     static MacEntry mac_entries[mac_history_len_half];
     static uint8_t mac_entry_state[mac_history_len_half];
 
-    String header_line = "WigleWifi-1.4,appRelease=" + (String)MARAUDER_VERSION + ",model=ESP32 Marauder,release=" + (String)MARAUDER_VERSION + ",device=ESP32 Marauder,display=SPI TFT,board=ESP32 Marauder,brand=JustCallMeKoko\nMAC,SSID,AuthMode,FirstSeen,Channel,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,Type\n";
+    String header_line = "WigleWifi-1.6,appRelease=" + (String)MARAUDER_VERSION + ",model=ESP32 Marauder,release=" + (String)MARAUDER_VERSION + ",device=ESP32 Marauder,display=SPI TFT,board=ESP32 Marauder,brand=JustCallMeKoko,star=Sol,body=3,subBody=0\nMAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type\n";
+
+    static uint16_t channelToFrequency(uint8_t channel) {
+      if (channel >= 1 && channel <= 14)
+        return 2407 + channel * 5;
+      else if (channel >= 32 && channel <= 233)
+        return 5000 + channel * 5;
+      return 0;
+    }
 
     uint8_t dual_band_channels[DUAL_BAND_CHANNELS] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 32, 36, 40, 44, 48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88, 92, 96, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165, 169, 173, 177};
 
@@ -1052,24 +970,9 @@ class WiFiScan
       void retainBLEFoxHuntSubtype(MarauderBLEAdvertisedDevice* advertised_device,
                                    const BleDevice& ble_device);
     #endif
-    void setFoxHuntTarget(const uint8_t mac[6], const String& name, int8_t rssi, uint8_t channel, bool bluetooth, const String& advertised_address = "");
-    bool updateFoxHuntRssi(const uint8_t mac[6], int8_t rssi, uint8_t channel = 0);
-    bool updateBluetoothFoxHuntRssi(const uint8_t mac[6], const String& advertised_address, int8_t rssi);
-    size_t getPineScanCount() const;
-    String getPineScanLabel(size_t index) const;
-    int8_t getPineScanRssi(size_t index) const;
-    uint8_t getPineScanChannel(size_t index) const;
-    bool selectPineScanFoxTarget(size_t index);
-    size_t getMultiSSIDCount() const;
-    String getMultiSSIDLabel(size_t index) const;
-    int8_t getMultiSSIDRssi(size_t index) const;
-    uint8_t getMultiSSIDChannel(size_t index) const;
-    bool selectMultiSSIDFoxTarget(size_t index);
+    // Pure Wardrive: foxhunt decls removed.
     uint32_t getCompleteEapol(int check_index = -1);
-    void drawChannelLine();
-    #ifdef HAS_SCREEN
-      int8_t checkAnalyzerButtons(uint32_t currentTime);
-    #endif
+    // Pure Wardrive: analyzer decls removed.
     bool seen_mac(unsigned char* mac, bool simple = true);
     int update_mac_entry(const uint8_t mac[6], int8_t rssi = 0, bool bt = false);
     inline void insert_mac_entry(uint32_t idx, const uint8_t mac[6], uint32_t now_ms, int8_t rssi = 0, bool bt = false);
@@ -1080,20 +983,17 @@ class WiFiScan
       void copyNimbleMac(const BLEAddress &addr, unsigned char out[6]);
     #endif
     #ifdef HAS_NIMBLE_2
-      bool executeFindMySound(bool gui = false);
+      // Pure Wardrive: FindMy decls removed.
     #endif
-    bool filterActive();
+    // Pure Wardrive: target-filter decl removed.
     bool RunGPSInfo(bool tracker = false, bool display = true, bool poi = false);
     void logPoint(String lat, String lon, float alt, String datetime, bool poi = false);
     void setMac();
-    void renderRawStats();
-    void renderPacketRate();
-    void displayAnalyzerString(String str);
+    // Pure Wardrive: analyzer decls removed.
     String security_int_to_string(int security_type);
     void RunSetup();
     int clearList(uint8_t list_type);
-    bool addSSID(String essid);
-    int generateSSIDs(int count = 20);
+    // Pure Wardrive: attack-list decls removed.
     bool shutdownWiFi();
     bool shutdownBLE();
     bool scanning();
@@ -1106,20 +1006,8 @@ class WiFiScan
     void discardPendingWifiCredential();
     void getMAC(bool get_sta, uint8_t* mac);
     void changeChannel(int chan = -1);
-    void RunAPInfo(uint16_t index, bool do_display = true);
+    // Pure Wardrive: attack-list decls removed.
     void RunInfo();
-    void RunSetMac(uint8_t * mac, bool ap = true);
-    void RunGenerateRandomMac(bool ap = true);
-    void RunGenerateSSIDs(int count = 20);
-    void RunClearSSIDs();
-    void RunClearAPs();
-    void RunClearStations();
-    void RunSaveSSIDList(bool save_as = true);
-    void RunLoadSSIDList();
-    void RunSaveAPList(bool save_as = true);
-    void RunLoadAPList();
-    void RunSaveATList(bool save_as = true);
-    void RunLoadATList();
     void RunSetupGPSTracker(uint8_t scan_mode);
     void channelHop(bool filtered = false, bool ranged = false);
     uint8_t currentScanMode = 0;
@@ -1129,7 +1017,7 @@ class WiFiScan
     void setBaseMacAddress(uint8_t macAddr[6]);
 
     uint16_t poiCount = 0;
-    void tagPOI(const char* label = nullptr);
+    // Pure Wardrive: tagPOI removed.
 
     bool save_serial = false;
     void startPcap(const char* file_name);
@@ -1141,24 +1029,12 @@ class WiFiScan
     static String lastClientIP;
 
     static void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info);
-    static bool initMbedtls();
-    static int mbedtls_entropy_source(void *data, unsigned char *output, size_t len);
-    static bool getSAEACT(const uint8_t *frame, size_t frame_len, uint16_t &group_out, size_t &act_len_out);
-    static bool sae_group_sizes(uint16_t group, size_t &scalar_len, size_t &element_len);
-    static bool mac_cmp(const uint8_t *a, const uint8_t *b);
+    // Pure Wardrive: SAE/sniffer decls removed.
     static inline uint16_t le16(const uint8_t *p);
     static void getMAC(char *addr, uint8_t* data, uint16_t offset);
     static void getMAC(uint8_t* mac, const uint8_t* data, uint16_t offset);
     static void beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type);
-    static void apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type);
-    static void eapolSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type);
-    static void wifiSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type);
-    static void pineScanSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type); // Pineapple
-    static int extractPineScanChannel(const uint8_t* payload, int len); // Pineapple
-    static void multiSSIDSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type); // MultiSSID
-    #ifdef HAS_NIMBLE_2
-      static void trackerNotifyCallback(NimBLERemoteCharacteristic* characteristic, uint8_t* data, size_t length, bool isNotify);
-    #endif
+    // Pure Wardrive: pentest sniffer decls removed.
     static inline uint32_t hash_mac(const uint8_t mac[6]);
 };
 #endif

@@ -1,28 +1,55 @@
-<!---[![License: MIT](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/justcallmekoko/ESP32Marauder/blob/master/LICENSE)--->
-<!---[![Gitter](https://badges.gitter.im/justcallmekoko/ESP32Marauder.png)](https://gitter.im/justcallmekoko/ESP32Marauder)--->
-<!---[![Build Status](https://travis-ci.com/justcallmekoko/ESP32Marauder.svg?branch=master)](https://travis-ci.com/justcallmekoko/ESP32Marauder)--->
-<!---Shields/Badges https://shields.io/--->
+# PURE WARDRIVER
 
-# ESP32 Marauder
-<p align="center"><img alt="Marauder logo" src="https://github.com/justcallmekoko/ESP32Marauder/blob/master/pictures/marauder_skull_patch_04_full_final.png?raw=true" width="300"></p>
+<p align="center"><img alt="PURE WARDRIVER logo" src="pictures/pure-wardriver-logo.png" width="300"></p>
 <p align="center">
-  <b>A suite of WiFi/Bluetooth offensive and defensive tools for the ESP32</b>
-  <br><br>
-  <a href="https://github.com/justcallmekoko/ESP32Marauder/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
-  <a href="https://gitter.im/justcallmekoko/ESP32Marauder"><img alt="Gitter" src="https://badges.gitter.im/justcallmekoko/ESP32Marauder.png"/></a>
-  <br>
-  <a href="https://twitter.com/intent/follow?screen_name=jcmkyoutube"><img src="https://img.shields.io/twitter/follow/jcmkyoutube?style=social&logo=twitter" alt="Twitter"></a>
-  <a href="https://www.instagram.com/just.call.me.koko"><img src="https://img.shields.io/badge/Follow%20Me-Instagram-orange" alt="Instagram"/></a>
-  <br><br>
+  <b>Pure wardriving firmware for the ESP32 Marauder V8 — no pentest tools, just wardriving.</b>
 </p>
-    
-[![Build and Push](https://github.com/justcallmekoko/ESP32Marauder/actions/workflows/build_push.yml/badge.svg)](https://github.com/justcallmekoko/ESP32Marauder/actions/workflows/build_push.yml)
-[![Firmware coverage](https://codecov.io/gh/justcallmekoko/ESP32Marauder/branch/develop/graph/badge.svg?flag=firmware-unit-tests)](https://app.codecov.io/gh/justcallmekoko/ESP32Marauder/tree/develop)
 
-## Getting Started
-Download the [latest release](https://github.com/justcallmekoko/ESP32Marauder/releases/latest) of the firmware.  
+## What it is
 
-Check out the project [wiki](https://github.com/justcallmekoko/ESP32Marauder/wiki) for a full overview of the ESP32 Marauder
+PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
 
-# For Sale Now
-You can buy the ESP32 Marauder using [this link](https://www.justcallmekokollc.com)
+- **SCAN** — WiFi + BLE wardriving with GPS logging (Wigle-compatible CSV)
+- **SYNC** — upload log files to [WDGWars](https://wdgwars.pl), [WiGLE](https://wigle.net), or both
+- **MENU** — upload file browser, Saved WiFi, geofences, GPS tools, settings
+- Boot self-test, blue touch UI, 5s SCAN toggle guard + pocket-press guard
+
+## Hardware
+
+Primary target: **Marauder V8** (ESP32-C5, touch display, GPS, SD).
+Other boards are planned — see `esp32_marauder/configs.h` for supported targets.
+
+## Flashing
+
+Use a release `.bin` (or build it yourself, see below) and flash it with
+`C5_Py_Flasher_for_v8/c5_flasher.py` or `esptool.py`
+(ESP32-C5, 8 MB flash, `default_8MB` partition scheme).
+
+## Building (V8)
+
+```powershell
+.\tools\arduino-cli.exe compile `
+  --fqbn "esp32:esp32:esp32c5:FlashSize=8M,PartitionScheme=default_8MB,PSRAM=enabled" `
+  --build-property "compiler.cpp.extra_flags=-DMARAUDER_V8" `
+  --warnings none ./esp32_marauder --output-dir ./build_pure_wardrive_v8
+```
+
+Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
+(see `.github/workflows/build_parallel.yml` for versions).
+
+## First run
+
+1. Wait for GPS fix.
+2. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
+3. Press **STOP** (5s guard against double-taps) to stop.
+4. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
+5. Set credentials via serial CLI first:
+   `settings` (`wu`, `wt`, `wdg_key`), `join -s` (Saved WiFi).
+
+## Attribution / License
+
+Based on [ESP32Marauder](https://github.com/justcallmekoko/ESP32Marauder)
+by Just Call Me Koko, MIT licensed. This project keeps the original
+`LICENSE` (MIT) and copyright notice. All pentest/attack modules were
+removed; wardrive, GPS, SD, display and upload code paths are retained
+from upstream.

@@ -1,6 +1,6 @@
 #include "esp_random.h"
 #include "WiFiScan.h"
-#include "ReconMission.h"
+// Pure Wardrive: ReconMission removed.
 #include "FoxHuntTarget.h"
 #include "BeaconFrame.h"
 #include "WdgResponse.h"
@@ -40,7 +40,7 @@ LinkedList<Flipper>* flippers;
 LinkedList<IPAddress>* ipList;
 LinkedList<ProbeReqSsid>* probe_req_ssids;
 LinkedList<BleDevice>* ble_devices;
-extern ReconMission recon_obj;
+// Pure Wardrive: ReconMission removed.
 
 size_t WiFiScan::retainedAccessPointCount() const {
   return access_points == nullptr ? 0 : access_points->size();
@@ -72,6 +72,7 @@ extern "C" {
   NimBLEAdvertising *pAdvertising;
 
   //// https://github.com/Spooks4576
+#if 0 // Pure Wardrive: BLE-spam payloads removed.
   NimBLEAdvertisementData WiFiScan::GetUniversalAdvertisementData(EBLEPayloadType Type) {
     NimBLEAdvertisementData AdvData = NimBLEAdvertisementData();
 
@@ -307,6 +308,7 @@ extern "C" {
 
     return AdvData;
   }
+#endif // Pure Wardrive.
   //// https://github.com/Spooks4576
 
 
@@ -323,8 +325,7 @@ extern "C" {
           unsigned char mac_char[6];
           wifi_scan_obj.copyNimbleMac(advertisedDevice->getAddress(), mac_char);
 
-          if (wifi_scan_obj.currentScanMode == BT_SCAN_FOX_HUNT)
-            wifi_scan_obj.updateBluetoothFoxHuntRssi(mac_char, mac, rssi);
+          // Pure Wardrive: FoxHunt removed.
 
           if (wifi_scan_obj.bt_pending_clear)
             return;
@@ -586,7 +587,7 @@ extern "C" {
               int device_match_check = wifi_scan_obj.seenBLEDevice(ble_device);
 
               if (device_match_check >= 0) {
-                recon_obj.queueRepeat('B', ble_device.mac, ble_device.rssi, 0);
+                // Pure Wardrive: ReconMission removed.
                 ble_device.selected = ble_devices->get(device_match_check).selected;
                 ble_device.name = ble_devices->get(device_match_check).name;
                 memcpy(ble_device.mac, ble_devices->get(device_match_check).mac, sizeof(mac_char));
@@ -633,7 +634,7 @@ extern "C" {
         
                 Serial.println();
         
-                if (!recon_obj.suppressScanUi() && !display_obj.printing) {
+                if (!display_obj.printing) {
                   display_obj.loading = true;
                   display_obj.display_buffer->add(display_string);
                   display_obj.loading = false;
@@ -675,7 +676,7 @@ extern "C" {
                     display_string.concat(F(" | GPS: No Fix"));
                   }
 
-                  String wardrive_line = (String)advertisedDevice->getAddress().toString().c_str() + ",,[BLE]," + gps_obj.getDatetime() + ",0," + (String)advertisedDevice->getRSSI() + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",BLE\n";
+                  String wardrive_line = (String)advertisedDevice->getAddress().toString().c_str() + ",,[BLE]," + gps_obj.getDatetime() + ",0,0," + (String)advertisedDevice->getRSSI() + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",,,BLE\n";
                   Serial.print(wardrive_line);
 
                   if (do_save && !wifi_scan_obj.isGeofencePaused())
@@ -1053,8 +1054,7 @@ extern "C" {
           unsigned char mac_char[6];
           wifi_scan_obj.copyNimbleMac(advertisedDevice->getAddress(), mac_char);
 
-          if (wifi_scan_obj.currentScanMode == BT_SCAN_FOX_HUNT)
-            wifi_scan_obj.updateBluetoothFoxHuntRssi(mac_char, mac, rssi);
+          // Pure Wardrive: FoxHunt removed.
           #ifdef HAS_NIMBLE_2
             const std::vector<unsigned char>& payLoad = advertisedDevice->getPayload();
             size_t len = payLoad.size();
@@ -1289,7 +1289,7 @@ extern "C" {
               int device_match_check = wifi_scan_obj.seenBLEDevice(ble_device);
 
               if (device_match_check >= 0) {
-                recon_obj.queueRepeat('B', ble_device.mac, ble_device.rssi, 0);
+                // Pure Wardrive: ReconMission removed.
                 ble_device.selected = ble_devices->get(device_match_check).selected;
                 ble_device.name = ble_devices->get(device_match_check).name;
                 memcpy(ble_device.mac, ble_devices->get(device_match_check).mac, sizeof(mac_char));
@@ -1336,7 +1336,7 @@ extern "C" {
         
                 Serial.println();
         
-                if (!recon_obj.suppressScanUi() && !display_obj.printing) {
+                if (!display_obj.printing) {
                   display_obj.loading = true;
                   display_obj.display_buffer->add(display_string);
                   display_obj.loading = false;
@@ -1427,7 +1427,7 @@ extern "C" {
                   if (gps_obj.getFixStatus())
                     do_save = true;
 
-                  String wardrive_line = (String)mac + ",,[BLE]," + gps_obj.getDatetime() + ",0," + (String)rssi + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",BLE\n";
+                  String wardrive_line = (String)mac + ",,[BLE]," + gps_obj.getDatetime() + ",0,0," + (String)rssi + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",,,BLE\n";
                   Serial.print(wardrive_line);
 
                   if (do_save && !wifi_scan_obj.isGeofencePaused())
@@ -2113,12 +2113,14 @@ void WiFiScan::retainBLEFoxHuntSubtype(MarauderBLEAdvertisedDevice* advertised_d
 }
 #endif
 
+#if 0 // Pure Wardrive: pentest helpers removed.
 bool WiFiScan::isHostAlive(IPAddress ip) {
   if (ip != IPAddress(0, 0, 0, 0))
     return Ping.ping(ip, 1);  // 1 try, returns true if reply received
   else
     return false;
 }
+#endif // Pure Wardrive.
 
 bool WiFiScan::checkMem() {
   if (esp_get_free_heap_size() <= MEM_LOWER_LIM)
@@ -2189,6 +2191,7 @@ int WiFiScan::clearList(uint8_t list_type) {
   }
 }
 
+#if 0 // Pure Wardrive: pentest helpers removed.
 bool WiFiScan::addSSID(String essid) {
   //#ifndef HAS_DUAL_BAND
     ssid s = {essid, random(1, 15), {random(256), random(256), random(256), random(256), random(256), random(256)}, false};
@@ -2220,6 +2223,7 @@ int WiFiScan::generateSSIDs(int count) {
 
   return num_gen;
 }
+#endif // Pure Wardrive.
 
 void WiFiScan::setNetworkInfo() {
   this->ip_addr = WiFi.localIP();
@@ -2605,6 +2609,31 @@ bool WiFiScan::scanning() {
 
 // Function to prepare to run a specific scan
 void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {  
+  // Pure Wardrive build: block all pentest scan/attack modes at this single
+  // choke point. Menu and CLI callers share this path, so unlisted modes
+  // can never start transmitting or sniffing.
+  switch (scan_mode) {
+    case WIFI_SCAN_OFF:
+    case LV_JOIN_WIFI:
+    case LV_ADD_SSID:
+    case LV_SELECT_AP:
+    case WIFI_CONNECTED:
+    case WIFI_HOSTSPOT:
+    case OTA_UPDATE:
+    case SHOW_INFO:
+    case ESP_UPDATE:
+    case WIFI_SCAN_GPS_DATA:
+    case WIFI_SCAN_GPS_NMEA:
+    case GPS_TRACKER:
+    case WIFI_SCAN_WAR_DRIVE:
+    case WIFI_SCAN_STATION_WAR_DRIVE:
+    case BT_SCAN_WAR_DRIVE:
+    case BT_SCAN_WAR_DRIVE_CONT:
+      break;
+    default:
+      Serial.println(F("Disabled in Pure Wardrive build"));
+      return;
+  }
   this->initWiFi(scan_mode);
   if (scan_mode == WIFI_SCAN_OFF) {
     #ifdef HAS_ACT_LED
@@ -2617,6 +2646,8 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
     #endif
   }
 
+  // Pure Wardrive: pentest dispatch removed.
+#if 0
   if (scan_mode == WIFI_SCAN_PROBE)
     RunProbeScan(scan_mode, color);
   else if ((scan_mode == WIFI_SCAN_SAE_COMMIT) || (scan_mode == WIFI_ATTACK_SAE_COMMIT))
@@ -2637,7 +2668,8 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
     RunEapolScan(scan_mode, color);
   else if (scan_mode == WIFI_SCAN_AP)
     RunBeaconScan(scan_mode, color);
-  else if (scan_mode == WIFI_SCAN_WAR_DRIVE) {
+#endif // Pure Wardrive.
+  if (scan_mode == WIFI_SCAN_WAR_DRIVE) {
     this->reloadGeofences();
     this->geofence_paused = false;
     this->active_geofence_name = "";
@@ -2650,6 +2682,7 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
     // corrupted the wardrive status-bar typography.
     this->updateGeofenceState(true);
   }
+#if 0 // Pure Wardrive: pentest dispatch removed.
   else if (scan_mode == WIFI_SCAN_SIG_STREN)
     RunRawScan(scan_mode, color);    
   else if (scan_mode == WIFI_SCAN_RAW_CAPTURE)
@@ -2780,6 +2813,15 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
     RunPortScanAll(scan_mode, color);
   else if (scan_mode == WIFI_SCAN_RDP)
     RunPortScanAll(scan_mode, color);
+#endif // Pure Wardrive.
+  else if (scan_mode == WIFI_SCAN_GPS_NMEA){
+    #ifdef HAS_GPS
+      gps_obj.enable_queue();
+    #endif
+  }
+  else if (scan_mode == GPS_TRACKER) {
+    RunSetupGPSTracker(scan_mode);
+  }
   else {
     #ifdef HAS_ACT_LED
       digitalWrite(ACT_LED_PIN, LOW);
@@ -2823,6 +2865,7 @@ void WiFiScan::setLEDMode(int mode) {
   }
 }
 
+#if 0 // Pure Wardrive: attack helpers removed.
 void WiFiScan::displayTargetFilter() {
   #ifdef HAS_SCREEN
     if (this->filterActive()) {
@@ -2920,6 +2963,7 @@ void WiFiScan::startWiFiAttacks(uint8_t scan_mode, uint16_t color, const char* t
   this->setLEDMode(MODE_ATTACK);
   initTime = millis();
 }
+#endif // Pure Wardrive.
 
 bool WiFiScan::shutdownWiFi() {
   if (this->wifi_initialized) {
@@ -3079,9 +3123,8 @@ void WiFiScan::StopScan(uint8_t scan_mode) {
 
       WiFi.removeEvent(eventId);
 
-      evil_portal_obj.cleanup();
+      // Pure Wardrive: EvilPortal removed.
     #endif
-    evil_portal_obj.has_ap = false;
   }
 
   if ((currentScanMode == GPS_TRACKER) ||
@@ -3182,6 +3225,7 @@ bool WiFiScan::mac_cmp(struct mac_addr addr1, struct mac_addr addr2) {
   return true;
 }
 
+#if 0 // Pure Wardrive: u8 mac_cmp removed (SAE-only).
 bool WiFiScan::mac_cmp(uint8_t addr1[6], uint8_t addr2[6]) {
   //Return true if 2 mac_addr structs are equal.
   for (int y = 0; y < 6 ; y++) {
@@ -3191,6 +3235,7 @@ bool WiFiScan::mac_cmp(uint8_t addr1[6], uint8_t addr2[6]) {
   }
   return true;
 }
+#endif // Pure Wardrive.
 
 #ifdef HAS_BT
   void WiFiScan::copyNimbleMac(const BLEAddress &addr, unsigned char out[6]) {
@@ -3636,6 +3681,7 @@ void WiFiScan::setupScanDisplayArea(uint16_t background, uint16_t color) {
   #endif
 }
 
+#if 0 // Pure Wardrive: scanner stage helpers removed.
 void WiFiScan::writeNetworkInfo() {
   buffer_obj.append("\nSSID: " + (String)this->connected_network);
   buffer_obj.append("\nIP address: ");
@@ -3649,6 +3695,8 @@ void WiFiScan::writeNetworkInfo() {
   buffer_obj.append("\n");
 }
 
+#endif // Pure Wardrive.
+
 void WiFiScan::setWiFiMode(wifi_mode_t mode, wifi_promiscuous_cb_t cb) {
   esp_wifi_set_storage(WIFI_STORAGE_RAM);
   esp_wifi_set_mode(mode);
@@ -3658,7 +3706,7 @@ void WiFiScan::setWiFiMode(wifi_mode_t mode, wifi_promiscuous_cb_t cb) {
   esp_wifi_set_promiscuous_filter(&filt);
   esp_wifi_set_promiscuous_rx_cb(cb);
 }
-
+#if 0 // Pure Wardrive: scanner stage helpers removed.
 void WiFiScan::prepareScanStage(uint16_t color_1, uint16_t color_2) {
   #ifdef HAS_SCREEN
     #ifdef HAS_ILI9341
@@ -3669,6 +3717,9 @@ void WiFiScan::prepareScanStage(uint16_t color_1, uint16_t color_2) {
   #endif
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: pentest scan removed.
 void WiFiScan::RunPingScan(uint8_t scan_mode, uint16_t color) {
   if (scan_mode == WIFI_PING_SCAN)
     startLog("pingscan");
@@ -3722,7 +3773,9 @@ void WiFiScan::RunPingScan(uint8_t scan_mode, uint16_t color) {
   
   initTime = millis();
 }
+#endif // Pure Wardrive.
 
+#if 0 // Pure Wardrive: pentest scan removed.
 void WiFiScan::RunPortScanAll(uint8_t scan_mode, uint16_t color) {
   if (scan_mode == WIFI_SCAN_SSH)
     startLog("sshscan");
@@ -3819,6 +3872,7 @@ void WiFiScan::RunPortScanAll(uint8_t scan_mode, uint16_t color) {
   initTime = millis();
 }
 
+#if 0 // Pure Wardrive: attack-list helpers removed.
 void WiFiScan::RunLoadATList() {
   #ifdef HAS_SD
     // Prepare to access the file
@@ -3923,6 +3977,7 @@ void WiFiScan::RunSaveATList(bool save_as) {
     }
   #endif
 }
+#endif // Pure Wardrive.
 
 void WiFiScan::RunLoadAPList() {
   #ifdef HAS_SD
@@ -4142,6 +4197,7 @@ void WiFiScan::RunSaveSSIDList(bool save_as) {
   #endif
 }
 
+#if 0 // Pure Wardrive: EvilPortal removed.
 void WiFiScan::RunEvilPortal(uint8_t scan_mode, uint16_t color) {
   startLog("evil_portal");
 
@@ -4164,6 +4220,7 @@ void WiFiScan::RunEvilPortal(uint8_t scan_mode, uint16_t color) {
   this->wifi_initialized = true;
   initTime = millis();
 }
+#endif // Pure Wardrive.
 
 // Function to start running a beacon scan
 void WiFiScan::RunAPScan(uint8_t scan_mode, uint16_t color) {
@@ -4253,6 +4310,7 @@ void WiFiScan::RunClearSSIDs() {
     this->clearList(CLEAR_SSID);
   #endif
 }
+#endif // Pure Wardrive.
 
 void WiFiScan::setMac() {
   wifi_mode_t currentWiFiMode;
@@ -4260,7 +4318,7 @@ void WiFiScan::setMac() {
   esp_wifi_set_mac(WIFI_IF_AP, this->ap_mac);
   esp_wifi_set_mac(WIFI_IF_STA, this->sta_mac);
 }
-
+#if 0 // Pure Wardrive: attack-list helpers removed.
 void WiFiScan::RunSetMac(uint8_t * mac, bool ap) {
   if (ap) {
     for (int i = 0; i < 6; i++) {
@@ -4321,6 +4379,8 @@ void WiFiScan::RunGenerateSSIDs(int count) {
     this->generateSSIDs(count);
   #endif
 }
+
+#endif // Pure Wardrive.
 
 void WiFiScan::logPoint(String lat, String lon, float alt, String datetime, bool poi) {
   datetime.replace(" ", "T");
@@ -4650,6 +4710,7 @@ void WiFiScan::RunGPSNmea() {
   #endif
 }
 
+#if 0 // Pure Wardrive: pentest scan removed.
 void WiFiScan::RunAPInfo(uint16_t index, bool do_display) {
   #ifdef HAS_SCREEN
     if (do_display) {
@@ -4722,6 +4783,8 @@ void WiFiScan::RunAPInfo(uint16_t index, bool do_display) {
     }
   #endif
 }
+
+#endif // Pure Wardrive.
 
 void WiFiScan::RunInfo() {
   uint8_t sta_mac[6];
@@ -4815,6 +4878,7 @@ void WiFiScan::RunInfo() {
   //#endif
 }
 
+#if 0 // Pure Wardrive: pentest scans removed.
 void WiFiScan::RunPacketMonitor(uint8_t scan_mode, uint16_t color) {
   this->setLEDMode(MODE_SNIFF);
   /*#ifdef HAS_FLIPPER_LED
@@ -5159,6 +5223,9 @@ void WiFiScan::createNimbleClient() {
   nimbleClient = NimBLEDevice::createClient();
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: FindMy/BLE-spam removed.
 int WiFiScan::connectAndProcessTracker(NimBLEAddress& address) {
   //const NimBLEAddress address(targ_addr, addr_type);
   bool has_services = false;
@@ -5914,6 +5981,8 @@ void WiFiScan::executeBLESpam(EBLEPayloadType type) {
   #endif
 }*/
 
+#endif // Pure Wardrive.
+
 void WiFiScan::setBaseMacAddress(uint8_t macAddr[6]) {
   // Use ESP-IDF function to set the base MAC address
   //#ifndef HAS_DUAL_BAND
@@ -5982,7 +6051,7 @@ void WiFiScan::setBaseMacAddress(uint8_t macAddr[6]) {
 
           ssid.replace(",","_");
 
-          String wardrive_line = WiFi.BSSIDstr(i) + "," + ssid + "," + this->security_int_to_string(WiFi.encryptionType(i)) + "," + gps_obj.getDatetime() + "," + (String)WiFi.channel(i) + "," + (String)WiFi.RSSI(i) + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",WIFI\n";
+          String wardrive_line = WiFi.BSSIDstr(i) + "," + ssid + "," + this->security_int_to_string(WiFi.encryptionType(i)) + "," + gps_obj.getDatetime() + "," + (String)WiFi.channel(i) + "," + (String)channelToFrequency(WiFi.channel(i)) + "," + (String)WiFi.RSSI(i) + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",,,WIFI\n";
           Serial.print((String)this->mac_history_cursor + " | " + wardrive_line);
 
           if (do_save) {
@@ -6145,11 +6214,12 @@ void WiFiScan::executeWarDrive() {
             this->security_int_to_string(WiFi.encryptionType(i)) + "," +
             gps_obj.getDatetime() + "," +
             (String)WiFi.channel(i) + "," +
+            (String)channelToFrequency(WiFi.channel(i)) + "," +
             (String)WiFi.RSSI(i) + "," +
             gps_obj.getLat() + "," +
             gps_obj.getLon() + "," +
             gps_obj.getAlt() + "," +
-            gps_obj.getAccuracy() + ",WIFI\n";
+            gps_obj.getAccuracy() + ",,,WIFI\n";
 
           Serial.print((String)this->mac_history_cursor + " | " + wardrive_line);
 
@@ -6341,6 +6411,7 @@ void WiFiScan::closePoiFile() {
   #endif
 }
 
+#if 0 // Pure Wardrive: POI tagging removed.
 void WiFiScan::tagPOI(const char* label) {
   #if defined(HAS_GPS) && defined(HAS_SD)
     if (currentScanMode != WIFI_SCAN_WAR_DRIVE && currentScanMode != WIFI_SCAN_STATION_WAR_DRIVE) {
@@ -6375,6 +6446,7 @@ void WiFiScan::tagPOI(const char* label) {
     Serial.println("POI tagged: " + poiLabel + " (" + gps_obj.getLat() + ", " + gps_obj.getLon() + ")");
   #endif
 }
+#endif // Pure Wardrive.
 
 void WiFiScan::onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
   #ifdef HAS_SCREEN
@@ -6447,6 +6519,7 @@ void WiFiScan::onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
   #endif
 }
 
+#if 0 // Pure Wardrive: pentest display removed.
 void WiFiScan::displayAPStats() {
   #ifdef HAS_SCREEN
     display_obj.tft.fillRect(0,
@@ -6495,6 +6568,8 @@ void WiFiScan::displayAPStats() {
     display_obj.tft.println((String)primaryChannel);
   #endif
 }
+
+#endif // Pure Wardrive.
 
 void WiFiScan::displayWardriveStats() {
   #ifdef HAS_SCREEN
@@ -6589,8 +6664,8 @@ void WiFiScan::RunBeaconScan(uint8_t scan_mode, uint16_t color) {
   #ifdef HAS_SCREEN
     this->setupScanDisplayArea(TFT_WHITE, color);
     #ifdef HAS_FULL_SCREEN
-      display_obj.tft.fillRect(0,16,TFT_WIDTH,16, color);
-      if (scan_mode == WIFI_SCAN_AP)
+        display_obj.tft.fillRect(0,16,TFT_WIDTH,16, color);
+        if (scan_mode == WIFI_SCAN_AP)
         display_obj.tft.drawCentreString(text_table4[38],TFT_WIDTH / 2,16,2);
       else if (scan_mode == WIFI_SCAN_WAR_DRIVE) {
         for (int i = 0; i < mac_history_len; ++i)
@@ -6631,6 +6706,7 @@ void WiFiScan::startWardriverWiFi() {
 }
 
 
+#if 0 // Pure Wardrive: pentest scans removed.
 void WiFiScan::RunRawScan(uint8_t scan_mode, uint16_t color) {
   if (scan_mode != WIFI_SCAN_SIG_STREN)
     startPcap("raw");
@@ -6746,6 +6822,8 @@ void WiFiScan::RunSAEScan(uint8_t scan_mode, uint16_t color) {
   initTime = millis();
 }
 
+#endif // Pure Wardrive.
+
 void WiFiScan::throwThatShitInACircle() {
   esp_err_t err;
   wifi_config_t conf;
@@ -6775,7 +6853,7 @@ void WiFiScan::throwThatShitInACircle() {
     Serial.println(err, HEX);
   }
 }
-
+#if 0 // Pure Wardrive: pentest scans removed.
 // Function for running probe request scan
 void WiFiScan::RunProbeScan(uint8_t scan_mode, uint16_t color) {
   if (scan_mode == WIFI_SCAN_PROBE)
@@ -6832,6 +6910,9 @@ void WiFiScan::RunProbeScan(uint8_t scan_mode, uint16_t color) {
   initTime = millis();
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: BLE spam removed.
 void WiFiScan::RunFindMyLive(uint8_t scan_mode, uint16_t color) {
   #ifdef HAS_BT
     #ifdef HAS_SCREEN
@@ -6849,7 +6930,9 @@ void WiFiScan::RunFindMyLive(uint8_t scan_mode, uint16_t color) {
     this->setLEDMode(MODE_ATTACK);
   #endif
 }
+#endif // Pure Wardrive.
 
+#if 0 // Pure Wardrive: BLE spam removed.
 void WiFiScan::RunSourApple(uint8_t scan_mode, uint16_t color) {
   #ifdef HAS_BT
     NimBLEDevice::init("");
@@ -6879,7 +6962,9 @@ void WiFiScan::RunSourApple(uint8_t scan_mode, uint16_t color) {
 
   #endif
 }
+#endif // Pure Wardrive.
 
+#if 0 // Pure Wardrive: BLE spam removed.
 void WiFiScan::RunSwiftpairSpam(uint8_t scan_mode, uint16_t color) {
   #ifdef HAS_BT
     #ifdef HAS_SCREEN
@@ -6908,6 +6993,7 @@ void WiFiScan::RunSwiftpairSpam(uint8_t scan_mode, uint16_t color) {
     this->setLEDMode(MODE_ATTACK);
   #endif
 }
+#endif // Pure Wardrive.
 
 // Function to start running any BLE scan
 void WiFiScan::RunBluetoothScan(uint8_t scan_mode, uint16_t color) {
@@ -7159,6 +7245,7 @@ String WiFiScan::extractManufacturer(const uint8_t* payload) {
   return String(""); // not found
 }
 
+#if 0 // Pure Wardrive: pentest callbacks removed.
 void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type) {  
   extern WiFiScan wifi_scan_obj;
   wifi_promiscuous_pkt_t *snifferPacket = (wifi_promiscuous_pkt_t*)buf;
@@ -7181,18 +7268,14 @@ void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type
         (snifferPacket->payload[0] == 0xC0) && (len >= 26)) {
       const uint16_t reason = snifferPacket->payload[24] |
                               (static_cast<uint16_t>(snifferPacket->payload[25]) << 8);
-      recon_obj.queueDeauth(&snifferPacket->payload[10], &snifferPacket->payload[16],
-                            snifferPacket->rx_ctrl.rssi,
-                            snifferPacket->rx_ctrl.channel, reason);
+      // Pure Wardrive: ReconMission removed.
     }
 
     if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_AP_STA) &&
         (snifferPacket->payload[0] == 0x40) && (len > 26)) {
       const uint8_t name_length = snifferPacket->payload[25];
       if (name_length && (26 + name_length <= len)) {
-        recon_obj.queueProbe(&snifferPacket->payload[10], snifferPacket->rx_ctrl.rssi,
-                             snifferPacket->rx_ctrl.channel,
-                             &snifferPacket->payload[26], name_length);
+        // Pure Wardrive: ReconMission removed.
       }
     }
 
@@ -7245,9 +7328,7 @@ void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type
         access_point.channel = snifferPacket->rx_ctrl.channel;
         access_point.last_seen_ms = millis();
         access_points->set(in_list, access_point);
-        recon_obj.queueRepeat('A', &snifferPacket->payload[10],
-                              snifferPacket->rx_ctrl.rssi,
-                              snifferPacket->rx_ctrl.channel);
+        // Pure Wardrive: ReconMission removed.
       }
 
       if (in_list < 0) {
@@ -7292,8 +7373,7 @@ void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type
         Serial.print(F(" "));
 
         #ifdef HAS_SCREEN
-          if (!recon_obj.suppressScanUi())
-            display_obj.display_buffer->add(display_string);
+          display_obj.display_buffer->add(display_string);
         #endif
         
         if (essid == "") {
@@ -7435,9 +7515,7 @@ void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type
 
     // Check if dest is broadcast
     if (in_list) {
-      recon_obj.queueRepeat('S', &snifferPacket->payload[frame_offset],
-                            snifferPacket->rx_ctrl.rssi,
-                            snifferPacket->rx_ctrl.channel);
+      // Pure Wardrive: ReconMission removed.
     }
     if ((in_list) || (strcmp(dst_addr, "ff:ff:ff:ff:ff:ff") == 0))
       return;
@@ -7493,8 +7571,7 @@ void WiFiScan::apSnifferCallbackFull(void* buf, wifi_promiscuous_pkt_type_t type
 
       Serial.print(F(" "));
 
-      if (!recon_obj.suppressScanUi())
-        display_obj.display_buffer->add(display_string);
+      display_obj.display_buffer->add(display_string);
     #endif
 
     if (mem_check) {
@@ -7687,6 +7764,9 @@ uint8_t WiFiScan::getSecurityType(const uint8_t* beacon, uint16_t len) {
     return WIFI_SECURITY_OPEN;
 }
 
+#if 0 // Pure Wardrive: pentest callbacks removed.
+#endif // Pure Wardrive.
+
 void WiFiScan::processPwnagotchiBeacon(const uint8_t* frame, int length) {
   int jsonStartIndex = 36;
   int jsonEndIndex = length;
@@ -7813,6 +7893,9 @@ bool countPineScanTaggedParameters(const uint8_t* payload, int len) {
   return false;
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: pentest callbacks removed.
 void WiFiScan::pineScanSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
   extern WiFiScan wifi_scan_obj;
 
@@ -8391,6 +8474,9 @@ void WiFiScan::multiSSIDSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t t
   }
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: SAE attack removed.
 void WiFiScan::saeAttackLoop(uint32_t currentTime) {
   for (int i = 0; i < access_points->size(); i++) { // Find selected APs
     AccessPoint access_point = access_points->get(i);
@@ -8621,6 +8707,8 @@ bool WiFiScan::getSAEACT(const uint8_t *frame, size_t frame_len, uint16_t &group
   return is_sae;
 }
 
+#endif // Pure Wardrive.
+
 bool WiFiScan::checkFlockOUI(const uint8_t mac[6]) {
   size_t oui_count = sizeof(oui_list) / sizeof(oui_list[0]);
 
@@ -8644,7 +8732,7 @@ void WiFiScan::beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type
 
   #ifdef HAS_GPS
     extern GpsInterface gps_obj;
-    extern EvilPortal evil_portal_obj;
+    // Pure Wardrive: EvilPortal removed.
   #endif
 
   wifi_promiscuous_pkt_t *snifferPacket = (wifi_promiscuous_pkt_t*)buf;
@@ -8691,7 +8779,7 @@ void WiFiScan::beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type
         }
 
         if (mac_match) {
-          wifi_scan_obj.processPwnagotchiBeacon(snifferPacket->payload, len);
+          // Pure Wardrive: Pwnagotchi detection removed.
           return;
         }
 
@@ -8839,23 +8927,7 @@ void WiFiScan::beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type
     buffer_obj.append(snifferPacket, len);
   }
   else if (wifi_scan_obj.currentScanMode == WIFI_SCAN_SIG_STREN) {
-    if (!wifi_scan_obj.fox_hunt_target.active || len < 22)
-      return;
-
-    // A target can be the transmitter, receiver, or BSSID depending on frame direction.
-    const uint8_t address_offsets[] = {4, 10, 16};
-    bool found = false;
-    for (uint8_t offset : address_offsets) {
-      if (wifi_scan_obj.updateFoxHuntRssi(&snifferPacket->payload[offset], snifferPacket->rx_ctrl.rssi, snifferPacket->rx_ctrl.channel)) {
-        found = true;
-        break;
-      }
-    }
-    if (!found)
-      return;
-
-    Serial.println(wifi_scan_obj.fox_hunt_target.name + " RSSI: " + String(wifi_scan_obj.fox_hunt_target.rssi));
-    buffer_obj.append(snifferPacket, len);
+    // Pure Wardrive: FoxHunt removed.
   }
   else if (wifi_scan_obj.currentScanMode == BT_SCAN_FLOCK) {
     if (type == WIFI_PKT_MGMT) {
@@ -8985,11 +9057,12 @@ void WiFiScan::beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type
               wifi_scan_obj.security_int_to_string(WIFI_AUTH_WPA2_PSK) + "," +
               gps_obj.getDatetime() + "," +
               (String)wifi_scan_obj.set_channel + "," +
+              (String)channelToFrequency(wifi_scan_obj.set_channel) + "," +
               (String)snifferPacket->rx_ctrl.rssi + "," +
               gps_obj.getLat() + "," +
               gps_obj.getLon() + "," +
               gps_obj.getAlt() + "," +
-              gps_obj.getAccuracy() + ",WIFI\n";
+              gps_obj.getAccuracy() + ",,,WIFI\n";
 
             Serial.print((String)wifi_scan_obj.mac_history_cursor + " | " + wardrive_line);
 
@@ -9002,68 +9075,11 @@ void WiFiScan::beaconSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type
     }
   }
   else if (wifi_scan_obj.currentScanMode == WIFI_SCAN_DETECT_FOLLOW) {
-    int frame_check = wifi_scan_obj.update_mac_entry(src_addr, snifferPacket->rx_ctrl.rssi);
-
-    if (frame_check >= mac_history_len_half) {
-      int32_t dloc = 0;
-      bool is_following = is_following_candidate_light(wifi_scan_obj.mac_entries[frame_check - mac_history_len_half], millis(), &dloc);
-      if (is_following) {
-        wifi_scan_obj.mac_entries[frame_check - mac_history_len_half].dloc = dloc;
-        wifi_scan_obj.mac_entries[frame_check - mac_history_len_half].following = is_following;
-        buffer_obj.append(snifferPacket, len);
-      }
-    }
+    // Pure Wardrive: MAC-follow mode removed.
   }
   else if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_SAE_COMMIT) ||
            (wifi_scan_obj.currentScanMode == WIFI_ATTACK_SAE_COMMIT)) {
-    if (type == WIFI_PKT_MGMT) {
-      uint16_t group = 0;
-      size_t act_len = 0;
-      size_t act_off = 0;
-
-      String src_addr_str = macToString(src_addr);
-      String dst_addr_str = macToString(dst_addr);
-
-      if (wifi_scan_obj.getSAEACT(snifferPacket->payload, len, group, act_len)) {
-        wifi_scan_obj.mgmt_frames++;
-        if (wifi_scan_obj.currentScanMode != WIFI_ATTACK_SAE_COMMIT) {
-          #ifdef HAS_SCREEN
-            display_string.concat(WHITE_KEY);
-            display_string.concat((String)snifferPacket->rx_ctrl.rssi);
-            display_string.concat(" ");
-            display_string.concat(src_addr_str);
-            display_string.concat(" -> ");
-            display_string.concat(dst_addr_str);
-
-            int temp_len = display_string.length();
-
-            for (int i = 0; i < 40; i++)
-            {
-              display_string.concat(" ");
-            }
-
-            //while (display_obj.printing)
-            //  delay(1);
-            if (!display_obj.printing) {
-              display_obj.loading = true;
-              display_obj.display_buffer->add(display_string);
-              display_obj.loading = false;
-            }
-          #endif
-
-          Serial.print(src_addr_str + " -> " + dst_addr_str);
-          if (act_len > 0) {
-            Serial.print(F(" ACT: "));
-            Serial.print(hexDump(current_act, act_len));
-          }
-
-          Serial.print(F(" Frame Len: "));
-          Serial.println(len);
-
-          buffer_obj.append(snifferPacket, len);
-        }
-      }
-    }
+    // Pure Wardrive: SAE sniffing removed.
   }
   else if (wifi_scan_obj.currentScanMode == WIFI_SCAN_DEAUTH) {
     if (type == WIFI_PKT_MGMT) {
@@ -9375,6 +9391,7 @@ void WiFiScan::broadcastSetSSID(uint32_t current_time, const char* ESSID, uint8_
 }
 
 // Function for sending crafted beacon frames
+#if 0 // Pure Wardrive: attack transmitters removed.
 void WiFiScan::broadcastRandomSSID(uint32_t currentTime) {
   
 
@@ -10082,6 +10099,8 @@ void WiFiScan::wifiSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type) 
   }
 }
 
+#endif // Pure Wardrive.
+
 uint32_t WiFiScan::getCompleteEapol(int check_index) {
   uint32_t total_complete = 0;
   if (check_index < 0) {
@@ -10105,6 +10124,7 @@ uint32_t WiFiScan::getCompleteEapol(int check_index) {
   return total_complete;
 }
 
+#if 0 // Pure Wardrive: pentest callbacks removed.
 void WiFiScan::eapolSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
   extern WiFiScan wifi_scan_obj;
 
@@ -10316,6 +10336,9 @@ void WiFiScan::eapolSnifferCallback(void* buf, wifi_promiscuous_pkt_type_t type)
     buffer_obj.append(snifferPacket, len);
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: target-filter removed.
 bool WiFiScan::filterActive() {
   for (int i = 0; i < access_points->size(); i++) {
     if (access_points->get(i).selected)
@@ -10327,7 +10350,10 @@ bool WiFiScan::filterActive() {
 
 // GCOVR_EXCL_START -- Packet Monitor graphs require a hardware TFT and live capture.
 #ifdef HAS_SCREEN
-  int8_t WiFiScan::checkAnalyzerButtons(uint32_t currentTime) {
+  #endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: analyzer UI removed.
+int8_t WiFiScan::checkAnalyzerButtons(uint32_t currentTime) {
     boolean pressed = false;
   
     uint16_t t_x = 0, t_y = 0; // To store the touch coordinates
@@ -10559,24 +10585,15 @@ bool WiFiScan::filterActive() {
 #endif
 // GCOVR_EXCL_STOP
 
+#endif // Pure Wardrive.
+
 void WiFiScan::changeChannel(int chan) {
   if (chan != -1)
     this->set_channel = chan;
   esp_wifi_set_channel(this->set_channel, WIFI_SECOND_CHAN_NONE);
   delay(1);
   #ifdef HAS_SCREEN
-    #if defined(HAS_ILI9341) || (defined(MARAUDER_MINI_V3) && !defined(DUAL_MINI_C5)) || \
-        defined(MARAUDER_CARDPUTER) || defined(MARAUDER_CARDPUTER_ADV) // GCOVR_EXCL_LINE
-      if (this->currentScanMode == WIFI_PACKET_MONITOR) // GCOVR_EXCL_LINE -- requires a hardware TFT.
-        this->drawPacketMonitorControls(); // GCOVR_EXCL_LINE
-    #endif // GCOVR_EXCL_LINE
-    if (this->currentScanMode == WIFI_SCAN_CHAN_ANALYZER) {
-      #if !defined(MARAUDER_CARDPUTER) && !defined(MARAUDER_CARDPUTER_ADV)
-        this->addAnalyzerValue(this->set_channel * -1, -72, this->_analyzer_values, TFT_WIDTH);
-      #else
-        this->addAnalyzerValue(this->set_channel * -1, -72, this->_analyzer_values, SCREEN_WIDTH);
-      #endif
-    }
+    // Pure Wardrive: packet-monitor/channel-analyzer UI removed.
   #endif
 }
 
@@ -10684,6 +10701,7 @@ void WiFiScan::channelHop(bool filtered, bool ranged) {
   delay(1);
 }
 
+#if 0 // Pure Wardrive: analyzer UI removed.
 void WiFiScan::addAnalyzerValue(int16_t value, int rssi_avg, int16_t target_array[], int array_size) {
   // Shift all elements up by one index
   for (int i = array_size - 1; i > 0; i--) {
@@ -11118,6 +11136,9 @@ void WiFiScan::packetRateLoop(uint32_t tick) {
   #endif
 }
 
+#endif // Pure Wardrive.
+
+#if 0 // Pure Wardrive: port/ping scans removed.
 bool WiFiScan::checkHostPort(IPAddress ip, uint16_t port, uint16_t timeout) {
   WiFiClient client;
 
@@ -11478,6 +11499,8 @@ void WiFiScan::displayTransmitRate() {
     display_obj.showCenterText(displayString.c_str(), TFT_HEIGHT / 2);
   #endif
 }
+
+#endif // Pure Wardrive.
 
 uint16_t WiFiScan::rssiToColor(int8_t rssi) {
   if (rssi >= -25)
@@ -12029,6 +12052,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
   }
 #endif
 
+#if 0 // Pure Wardrive: FoxHunt removed.
 void WiFiScan::setFoxHuntTarget(const uint8_t mac[6], const String& name, int8_t rssi, uint8_t channel, bool bluetooth, const String& advertised_address) {
   memcpy(this->fox_hunt_target.mac, mac, sizeof(this->fox_hunt_target.mac));
   this->fox_hunt_target.name = name;
@@ -12225,9 +12249,12 @@ void WiFiScan::runFoxHunt(uint32_t currentTime) {
 }
 
 // Function for updating scan status
+#endif // Pure Wardrive.
+
 void WiFiScan::main(uint32_t currentTime)
 {
   // WiFi operations
+#if 0 // Pure Wardrive: pentest main dispatch removed.
   if ((currentScanMode == WIFI_SCAN_PROBE) ||
   (currentScanMode == WIFI_SCAN_AP) ||
   (currentScanMode == WIFI_SCAN_STATION) ||
@@ -12529,7 +12556,8 @@ void WiFiScan::main(uint32_t currentTime)
       this->displayAPStats();
     }
   }
-  else if (currentScanMode == WIFI_SCAN_WAR_DRIVE) {
+#endif // Pure Wardrive.
+  if (currentScanMode == WIFI_SCAN_WAR_DRIVE) {
     if (currentTime - initTime >= this->channel_hop_delay * HOP_DELAY)
     {
       initTime = millis();
@@ -12561,6 +12589,7 @@ void WiFiScan::main(uint32_t currentTime)
       this->RunGPSNmea();
     }
   }
+#if 0 // Pure Wardrive: pentest main dispatch removed.
   else if (currentScanMode == WIFI_SCAN_EVIL_PORTAL) {
     if (currentTime - initTime >= (this->channel_hop_delay * HOP_DELAY) / 4) {
       initTime = millis();
@@ -12773,6 +12802,7 @@ void WiFiScan::main(uint32_t currentTime)
       packets_sent = 0;
     }
   }
+#endif // Pure Wardrive.
   #ifdef HAS_GPS
     else if ((currentScanMode == WIFI_SCAN_OFF))
       if(gps_obj.queue_enabled())

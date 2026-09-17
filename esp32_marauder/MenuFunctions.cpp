@@ -2,6 +2,7 @@
 #include "MenuMarquee.h"
 #include "CommandLine.h"
 #include "OwnedListLifecycle.h"
+#include "PureWardriverLogo.h"
 #include "lang_var.h"
 
 #ifdef HAS_SCREEN
@@ -144,6 +145,14 @@ void MenuFunctions::buttonNotSelected(int b, int x) {
   // Ensure b is within valid button index range
   b = (x - menu_start_index) % BUTTON_SCREEN_LIMIT;
 
+  #ifdef HAS_FULL_SCREEN
+    // PURE WARDRIVER home uses custom buttons: redraw the dashboard instead.
+    if (current_menu == &mainMenu) {
+      this->displayHomeMenu();
+      return;
+    }
+  #endif
+
   #ifdef HAS_MINI_SCREEN
     this->drawMiniMenuButton(b, x, false);
   #endif
@@ -173,6 +182,14 @@ void MenuFunctions::buttonSelected(int b, int x, uint16_t text_offset) {
 
   // Ensure b is within valid button index range
   b = (x - menu_start_index) % BUTTON_SCREEN_LIMIT;
+
+  #ifdef HAS_FULL_SCREEN
+    // PURE WARDRIVER home uses custom buttons: redraw the dashboard instead.
+    if (current_menu == &mainMenu) {
+      this->displayHomeMenu();
+      return;
+    }
+  #endif
 
   uint16_t color = this->getColor(current_menu->list->get(x).color);
 
@@ -389,33 +406,7 @@ void MenuFunctions::main(uint32_t currentTime)
     }
   #endif
 
-  // POI button interception during wardrive — full width bottom bar
-  #ifdef HAS_ILI9341
-    if (pressed &&
-        (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE ||
-         wifi_scan_obj.currentScanMode == WIFI_SCAN_STATION_WAR_DRIVE)) {
-      if (t_y >= (SCREEN_HEIGHT - 50)) {
-        wifi_scan_obj.tagPOI(nullptr);
-        // Brief green flash
-        display_obj.tft.fillRect(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50, TFT_GREEN);
-        display_obj.tft.setTextSize(2);
-        #ifdef HAS_GPS
-        if (gps_obj.getFixStatus())
-          display_obj.tft.setTextColor(TFT_BLACK, TFT_GREEN);
-        else
-        #endif
-          display_obj.tft.setTextColor(TFT_BLACK, TFT_RED);
-        String poiFlash = "POI (" + String(wifi_scan_obj.poiCount) + ")";
-        int16_t flashWidth = poiFlash.length() * 12;
-        display_obj.tft.setCursor((SCREEN_WIDTH - flashWidth) / 2, SCREEN_HEIGHT - 33);
-        display_obj.tft.print(poiFlash);
-        delay(200);
-        x = -1;
-        y = -1;
-        return;
-      }
-    }
-  #endif
+  // Pure Wardrive: POI interception removed (Geofences only).
 
   // This is if there are scans/attacks going on
   #ifdef HAS_ILI9341
@@ -430,6 +421,17 @@ void MenuFunctions::main(uint32_t currentTime)
         (wifi_scan_obj.currentScanMode != GPS_TRACKER) &&
         (wifi_scan_obj.currentScanMode != WIFI_SCAN_GPS_NMEA))
     {
+      // PURE WARDRIVER pocket-press guard: a wardrive session is only
+      // stopped via the STOP button (with 5s toggle guard), never by
+      // tapping the screen.
+      if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
+          (wifi_scan_obj.currentScanMode == WIFI_SCAN_STATION_WAR_DRIVE) ||
+          (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE) ||
+          (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT)) {
+        x = -1;
+        y = -1;
+        return;
+      }
       // Stop the current scan
       if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_SAE_COMMIT) ||
           (wifi_scan_obj.currentScanMode == WIFI_SCAN_DETECT_FOLLOW) ||
@@ -531,6 +533,14 @@ void MenuFunctions::main(uint32_t currentTime)
           (wifi_scan_obj.currentScanMode != GPS_TRACKER) &&
           (wifi_scan_obj.currentScanMode != WIFI_SCAN_GPS_NMEA))
       {
+        // PURE WARDRIVER pocket-press guard (button boards): a wardrive
+        // session is only stopped via the STOP button, never by a keypress.
+        if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
+            (wifi_scan_obj.currentScanMode == WIFI_SCAN_STATION_WAR_DRIVE) ||
+            (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE) ||
+            (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT)) {
+          return;
+        }
         // Stop the current scan
         if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_PROBE) ||
             (wifi_scan_obj.currentScanMode == WIFI_SCAN_SAE_COMMIT) ||
@@ -760,7 +770,7 @@ void MenuFunctions::main(uint32_t currentTime)
                 wifi_scan_obj.activity_page++;
               }
             #endif
-            wifi_scan_obj.drawChannelLine();
+            // Pure Wardrive: channel analyzer removed.
           }
         }
         if (menu_button == DOWN_BUTTON) {
@@ -829,7 +839,7 @@ void MenuFunctions::main(uint32_t currentTime)
                 wifi_scan_obj.activity_page--;
               }
             #endif
-            wifi_scan_obj.drawChannelLine();
+            // Pure Wardrive: channel analyzer removed.
           }
         }
         if(menu_button == SELECT_BUTTON) {
@@ -928,7 +938,7 @@ void MenuFunctions::main(uint32_t currentTime)
                     wifi_scan_obj.activity_page++;
                   }
                 #endif
-                wifi_scan_obj.drawChannelLine();
+                // Pure Wardrive: channel analyzer removed.
               }
             }
         #endif
@@ -1016,7 +1026,7 @@ void MenuFunctions::main(uint32_t currentTime)
               wifi_scan_obj.activity_page--;
             }
           #endif
-          wifi_scan_obj.drawChannelLine();
+          // Pure Wardrive: channel analyzer removed.
         }
       }
       #endif
@@ -1684,43 +1694,231 @@ bool MenuFunctions::isKeyPressed(char c)
       uploadLogsMenu.list->clear();
       delete uploadLogsMenu.list;
       uploadLogsMenu.list = new LinkedList<MenuNode>();
-      uploadLogsMenu.name = "Logs";
+      uploadLogsMenu.name = "Upload";
 
-      uploadLogsMenu.parentMenu = &wifiGeneralMenu;
+      uploadLogsMenu.parentMenu = &mainMenu;
 
       this->addNodes(&uploadLogsMenu, "Back", TFTLIGHTGREY, 0, [this]() {
         this->changeMenu(uploadLogsMenu.parentMenu, true);
       });
 
-      this->addNodes(&uploadLogsMenu, "Delete Wardrive Logs", TFTORANGE, 0, [this]() {
-        this->changeMenu(&deleteAllMenu, true);
-      });
-
-      this->addNodes(&uploadLogsMenu, "Upload All", TFTGREEN, 0, [this]() {
-        this->changeMenu(&uploadAllMenu, true);
-        
-      });
-
       for (int i = 0; i < sd_obj.sd_files->size(); i++) {
-        File current_file = sd_obj.getFile("/" + sd_obj.sd_files->get(i));
         if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
           if (!sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
-            this->addNodes(&uploadLogsMenu, sd_obj.sd_files->get(i).c_str(), TFTCYAN, 0, [this, i]() {
-              sd_obj.selected_file_name = sd_obj.sd_files->get(i);
-              Serial.println(sd_obj.sd_files->get(i) + " selected");
-              this->changeMenu(&actionMenu, true);
+            String fname = sd_obj.sd_files->get(i);
+            this->addNodes(&uploadLogsMenu, fname.c_str(), TFTCYAN, 0, [this, fname]() {
+              sd_obj.selected_file_name = fname;
+              Serial.println(fname + " selected");
+              this->buildFileActionMenu(fname);
             });
           }
         }
       }
 
-      Serial.println("Built SD file menu with " + (String)sd_obj.sd_files->size() + " files");
+      Serial.println("Built upload menu with " + (String)sd_obj.sd_files->size() + " files");
     } else {
       Serial.println("SD Card not detected. Skipping menu creation...");
     }
   }
+
+  // PURE WARDRIVER home menu: SCAN toggle + SYNC + MENU.
+  // SCAN label follows the wardrive state.
+  void MenuFunctions::buildHomeMenu() {
+    mainMenu.list->clear();
+    delete mainMenu.list;
+    mainMenu.list = new LinkedList<MenuNode>();
+    mainMenu.selected = 0;
+
+    bool scanning = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
+    this->addNodes(&mainMenu, scanning ? "STOP" : "SCAN", scanning ? TFTRED : TFTGREEN, BEACON_SNIFF, [this]() {
+      // 5s guard against accidental double-tap aborting a scan.
+      uint32_t now = millis();
+      if (this->last_scan_toggle_ms != 0 && (now - this->last_scan_toggle_ms) < 5000) {
+        Serial.println(F("SCAN ignored: toggle guard active"));
+        return;
+      }
+      this->last_scan_toggle_ms = now;
+      if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
+        wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
+        display_obj.clearScreen();
+        display_obj.showCenterText("Wardriving stopped", TFT_HEIGHT / 2, true);
+        delay(1000);
+      } else {
+        display_obj.clearScreen();
+        this->drawStatusBar();
+        wifi_scan_obj.StartScan(WIFI_SCAN_WAR_DRIVE, TFT_GREEN);
+        return;
+      }
+      this->buildHomeMenu();
+      this->changeMenu(&mainMenu, true);
+    });
+    #ifdef HAS_DIRECT_UPLOAD
+      this->addNodes(&mainMenu, "SYNC", TFTCYAN, GENERAL_APPS, [this]() {
+        display_obj.clearScreen();
+        display_obj.tft.setTextWrap(false);
+        display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+        display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+        display_obj.tft.println("Loading...");
+
+        this->buildUploadFileMenu();
+
+        this->changeMenu(&uploadLogsMenu, true);
+      });
+    #endif
+    this->addNodes(&mainMenu, "MENU", TFTBLUE, DEVICE, [this]() {
+      this->changeMenu(&fullMenu, true);
+    });
+  }
+
+  void MenuFunctions::buildFileActionMenu(const String& filename) {
+    fileActionMenu.list->clear();
+    delete fileActionMenu.list;
+    fileActionMenu.list = new LinkedList<MenuNode>();
+    fileActionMenu.name = filename.c_str();
+    fileActionMenu.parentMenu = &uploadLogsMenu;
+
+    this->addNodes(&fileActionMenu, "Back", TFTLIGHTGREY, 0, [this]() {
+      this->changeMenu(fileActionMenu.parentMenu, true);
+    });
+
+    this->addNodes(&fileActionMenu, "Upload to WiGLE", TFTGREEN, 0, [this, filename]() {
+      this->doUpload(filename, WIGLE_UPLOAD, "WiGLE");
+    });
+
+    this->addNodes(&fileActionMenu, "Upload to WDGWars", TFTMAGENTA, 0, [this, filename]() {
+      this->doUpload(filename, WDG_UPLOAD, "WDGWars");
+    });
+
+    this->addNodes(&fileActionMenu, "Upload both", TFTYELLOW, 0, [this, filename]() {
+      this->doUpload(filename, BOTH_UPLOAD, "Both");
+    });
+
+    this->addNodes(&fileActionMenu, "Delete", TFTRED, 0, [this, filename]() {
+      display_obj.clearScreen();
+      display_obj.showCenterText("Deleting...", TFT_HEIGHT / 2, true);
+      sd_obj.removeFile("/" + filename);
+      sd_obj.removeFile("/" + filename + ".wdg");
+      sd_obj.removeFile("/" + filename + ".wigle");
+      delay(500);
+      this->buildUploadFileMenu();
+      this->changeMenu(&uploadLogsMenu, true);
+    });
+
+    this->changeMenu(&fileActionMenu, true);
+  }
+
+  void MenuFunctions::doUpload(const String& filename, uint8_t uploadType, const char* label) {
+    display_obj.clearScreen();
+    display_obj.tft.setTextWrap(true);
+    display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+    display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    if (settings_obj.getSavedWifiCount() == 0) {
+      display_obj.tft.println("WiFi Credentials Empty.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      delay(2000);
+      this->changeMenu(&fileActionMenu, true);
+      return;
+    }
+
+    if (!wifi_scan_obj.joinSavedWiFi(true)) {
+      display_obj.tft.println("Could not connect to WiFi.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      delay(2000);
+      this->changeMenu(&fileActionMenu, true);
+      return;
+    }
+
+    delay(1000);
+    Serial.println("Uploading " + filename + " to " + label + "...");
+    bool ok = wifi_scan_obj.uploadFile("/" + filename, true, uploadType);
+    display_obj.clearScreen();
+    display_obj.showCenterText(ok ? String(String(label) + " OK").c_str() : String(String(label) + " failed").c_str(), TFT_HEIGHT / 2, true);
+
+    WiFi.disconnect(true);
+    delay(100);
+    wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
+
+    delay(2000);
+    this->changeMenu(&fileActionMenu, true);
+  }
 #endif
 
+// PURE WARDRIVER boot checklist (blue theme). Called once at end of setup.
+void MenuFunctions::showBootChecklist() {
+  #ifdef HAS_SCREEN
+    display_obj.tft.fillScreen(TFT_NAVY);
+    display_obj.tft.setTextWrap(false);
+    display_obj.tft.setFreeFont(NULL);
+    display_obj.tft.setTextSize(1);
+    display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+    display_obj.tft.drawCentreString("V8 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.drawCentreString("ESP32-C5", SCREEN_WIDTH / 2, 20, 1);
+    display_obj.tft.drawFastHLine(0, 32, SCREEN_WIDTH, TFT_CYAN);
+
+    struct BootCheckRow { const char* label; bool ok; String extra; };
+    String battExtra = "";
+    bool battOk = false;
+    #ifdef HAS_BATTERY
+      int8_t lvl = battery_obj.getBatteryLevel();
+      if (lvl >= 0) {
+        battOk = true;
+        battExtra = String(lvl) + "%";
+      }
+    #endif
+    BootCheckRow rows[] = {
+      {"display panel", true, ""},
+      #ifdef HAS_TOUCH
+        {"touch", true, ""},
+      #else
+        {"touch", false, ""},
+      #endif
+      {"battery", battOk, battExtra},
+      #ifdef HAS_SD
+        {"SD card", sd_obj.supported, ""},
+      #else
+        {"SD card", false, ""},
+      #endif
+      {"config", settings_obj.getNumberSettings() > 0, ""},
+      {"WiFi 6 dual-band", true, ""},
+      #ifdef HAS_BT
+        {"BLE 5", true, ""},
+      #else
+        {"BLE 5", false, ""},
+      #endif
+      #ifdef HAS_GPS
+        {"GPS uart", gps_obj.getGpsModuleStatus(), ""},
+      #else
+        {"GPS uart", false, ""},
+      #endif
+      {"wardrive engine", true, ""},
+    };
+    const uint8_t rowCount = sizeof(rows) / sizeof(rows[0]);
+    for (uint8_t i = 0; i < rowCount; i++) {
+      uint16_t y = 42 + i * 20;
+      display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+      display_obj.tft.setCursor(12, y);
+      display_obj.tft.print(String("> ") + rows[i].label);
+      if (rows[i].extra.length() > 0) {
+        display_obj.tft.print(" ");
+        display_obj.tft.print(rows[i].extra);
+      }
+      String state = rows[i].ok ? "OK" : "--";
+      display_obj.tft.setTextColor(rows[i].ok ? TFT_GREEN : TFT_DARKGREY, TFT_NAVY);
+      display_obj.tft.drawString(state, SCREEN_WIDTH - 12 - state.length() * 6, y, 1);
+    }
+
+    display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+    display_obj.tft.drawCentreString(">> WARDRIVER ONLINE", SCREEN_WIDTH / 2, 42 + rowCount * 20 + 8, 1);
+    delay(2500);
+    this->changeMenu(&mainMenu, true);
+  #endif
+}
+
+#if 0 // Pure Wardrive: FoxHunt removed.
 const char* MenuFunctions::foxSortLabel() const {
   switch (fox_sort_mode) {
     case TargetSortMode::SIGNAL_DESC: return "Signal v";
@@ -1981,6 +2179,7 @@ void MenuFunctions::buildBluetoothFoxHuntMenu() {
   this->addNodes(&foxHuntMenu, "Flock", TFTORANGE, FLOCK, [this]() { buildFoxTargetList(FoxHuntListKind::FLOCK_TARGETS); });
   this->changeMenu(&foxHuntMenu, true);
 }
+#endif // Pure Wardrive.
 
 // Function to build the menus
 void MenuFunctions::RunSetup()
@@ -2001,12 +2200,10 @@ void MenuFunctions::RunSetup()
    
   // root menu stuff
   mainMenu.list = new LinkedList<MenuNode>(); // Get list in first menu ready
+  fullMenu.list = new LinkedList<MenuNode>();
 
   // Main menu stuff
-  wifiMenu.list = new LinkedList<MenuNode>(); // Get list in second menu ready
-#ifdef HAS_BT
-  bluetoothMenu.list = new LinkedList<MenuNode>(); // Get list in third menu ready
-#endif
+  // Pure Wardrive: pentest menu allocs removed.
   deviceMenu.list = new LinkedList<MenuNode>();
   #ifdef HAS_GPS
     if (gps_obj.getGpsModuleStatus()) {
@@ -2017,7 +2214,6 @@ void MenuFunctions::RunSetup()
 
   // Device menu stuff
   failedUpdateMenu.list = new LinkedList<MenuNode>();
-  confirmMenu.list = new LinkedList<MenuNode>();
   updateMenu.list = new LinkedList<MenuNode>();
   settingsMenu.list = new LinkedList<MenuNode>();
   specSettingMenu.list = new LinkedList<MenuNode>();
@@ -2027,73 +2223,28 @@ void MenuFunctions::RunSetup()
     geofenceRadiusMenu.list = new LinkedList<MenuNode>();
   #endif
   infoMenu.list = new LinkedList<MenuNode>();
-  // WiFi menu stuff
-  wifiSnifferMenu.list = new LinkedList<MenuNode>();
-  wifiScannerMenu.list = new LinkedList<MenuNode>();
-  wifiAttackMenu.list = new LinkedList<MenuNode>();
-  /*#ifdef HAS_GPS
-    wardrivingMenu.list = new LinkedList<MenuNode>();
-  #endif*/
-  wifiGeneralMenu.list = new LinkedList<MenuNode>();
-  wifiAPMenu.list = new LinkedList<MenuNode>();
+  // Pure Wardrive: pentest menu allocs removed.
   savedWifiMenu.list = nullptr;
-  wifiIPMenu.list = new LinkedList<MenuNode>();
-  apInfoMenu.list = new LinkedList<MenuNode>();
-  setMacMenu.list = new LinkedList<MenuNode>();
-  genAPMacMenu.list = new LinkedList<MenuNode>();
-  wifiStationMenu.list = new LinkedList<MenuNode>();
-  foxSortMenu.list = new LinkedList<MenuNode>();
-  foxFilterMenu.list = new LinkedList<MenuNode>();
-  selectProbeSSIDsMenu.list = new LinkedList<MenuNode>();
 
   // WiFi HTML menu stuff
-  htmlMenu.list = new LinkedList<MenuNode>();
   miniKbMenu.list = new LinkedList<MenuNode>();
   #ifdef HAS_SD
     sdDeleteMenu.list = nullptr;
   #endif
 
-  // Bluetooth menu stuff
-  bluetoothSnifferMenu.list = new LinkedList<MenuNode>();
-  bluetoothAttackMenu.list = new LinkedList<MenuNode>();
-
-  // Settings stuff
-  generateSSIDsMenu.list = new LinkedList<MenuNode>();
-  clearSSIDsMenu.list = new LinkedList<MenuNode>();
-  clearAPsMenu.list = new LinkedList<MenuNode>();
-  saveFileMenu.list = new LinkedList<MenuNode>();
+  // Pure Wardrive: pentest menu allocs removed.
 
   #ifdef HAS_DIRECT_UPLOAD
     uploadLogsMenu.list = new LinkedList<MenuNode>();
-    uploadAllMenu.list = new LinkedList<MenuNode>();
-    deleteAllMenu.list = new LinkedList<MenuNode>();
-    actionMenu.list = new LinkedList<MenuNode>();
+    fileActionMenu.list = new LinkedList<MenuNode>();
   #endif
-
-  saveSSIDsMenu.list = new LinkedList<MenuNode>();
-  loadSSIDsMenu.list = new LinkedList<MenuNode>();
-  saveAPsMenu.list = new LinkedList<MenuNode>();
-  loadAPsMenu.list = new LinkedList<MenuNode>();
-  saveATsMenu.list = new LinkedList<MenuNode>();
-  loadATsMenu.list = new LinkedList<MenuNode>();
-
-  evilPortalMenu.list = new LinkedList<MenuNode>();
-  ssidsMenu.list = new LinkedList<MenuNode>();
-
-  #ifdef HAS_GPS
-    gpsPOIMenu.list = new LinkedList<MenuNode>();
-  #endif
-
-  foxHuntMenu.list = new LinkedList<MenuNode>();
-  reconMenu.list = new LinkedList<MenuNode>();
 
   // Work menu names
-  mainMenu.name = text_table1[6];
-  reconMenu.name = "Recon";
-  wifiMenu.name = text_table1[7];
+  mainMenu.name = "WARDRIVE";
+  fullMenu.name = "Menu";
+  // Pure Wardrive: pentest menu names removed.
   deviceMenu.name = text_table1[9];
   failedUpdateMenu.name = text_table1[11];
-  confirmMenu.name = text_table1[13];
   updateMenu.name = text_table1[15];
   infoMenu.name = text_table1[17];
   settingsMenu.name = text_table1[18];
@@ -2102,103 +2253,69 @@ void MenuFunctions::RunSetup()
   #ifdef HAS_MINI_SCREEN
     geofenceRadiusMenu.name = "Radius (miles)";
   #endif
-  bluetoothMenu.name = text_table1[19];
-  wifiSnifferMenu.name = text_table1[20];
-  wifiScannerMenu.name = "Scanners";
-  wifiAttackMenu.name = text_table1[21];
-  wifiGeneralMenu.name = text_table1[22];
-  saveFileMenu.name = "Save/Load Files";
-  saveSSIDsMenu.name = "Save SSIDs";
-  loadSSIDsMenu.name = "Load SSIDs";
-  saveAPsMenu.name = "Save APs";
-  loadAPsMenu.name = "Load APs";
-  saveATsMenu.name = "Save Airtags";
-  loadATsMenu.name = "Load Airtags";
-
-  bluetoothSnifferMenu.name = text_table1[23];
-  bluetoothAttackMenu.name = "Bluetooth Attacks";
-  generateSSIDsMenu.name = text_table1[27];
-  clearSSIDsMenu.name = text_table1[28];
-  clearAPsMenu.name = text_table1[29];
-  wifiAPMenu.name = "Select";
-  wifiIPMenu.name = "Active IPs";
-  apInfoMenu.name = "AP Info";
-  setMacMenu.name = "Set MACs";
-  genAPMacMenu.name = "Generate AP MAC";
-  wifiStationMenu.name = "Select Stations";
+  // Pure Wardrive: pentest menu names removed.
 
   #ifdef HAS_DIRECT_UPLOAD
-    uploadLogsMenu.name = "Upload Logs";
-    uploadAllMenu.name = "Upload All?";
-    deleteAllMenu.name = "Delete All?";
-    actionMenu.name = "Destination";
+    uploadLogsMenu.name = "Upload";
+    fileActionMenu.name = "File";
   #endif
 
   #ifdef HAS_GPS
-    gpsMenu.name = "GPS"; 
+    gpsMenu.name = "GPS";
     gpsInfoMenu.name = "GPS Data";
-    //wardrivingMenu.name = "Wardriving";
-  #endif  
-  htmlMenu.name = "EP HTML List";
+  #endif
   miniKbMenu.name = "Mini Keyboard";
 
   #ifdef HAS_SD
     sdDeleteMenu.name = "Delete SD Files";
   #endif
 
-  selectProbeSSIDsMenu.name = "Probe Requests";
-  evilPortalMenu.name = "Evil Portal";
-  ssidsMenu.name = "SSIDs";
+  // Pure Wardrive: pentest menus removed.
 
-  #ifdef HAS_GPS
-    gpsPOIMenu.name = "GPS POI";
-  #endif
-
-  foxHuntMenu.name = "Fox Hunt";
-
-  // Build Main Menu
+  // Build Main Menu - PURE WARDRIVER home (SCAN/SYNC/MENU)
   mainMenu.parentMenu = NULL;
-  reconMenu.parentMenu = &mainMenu;
-  this->addNodes(&reconMenu, text09, TFTLIGHTGREY, 0, [this]() {
-    this->changeMenu(&mainMenu, true);
+  this->buildHomeMenu();
+
+  // Full menu behind MENU button
+  fullMenu.parentMenu = &mainMenu;
+  this->addNodes(&fullMenu, text09, TFTLIGHTGREY, 0, [this]() {
+    this->changeMenu(fullMenu.parentMenu, true);
   });
-  this->addNodes(&reconMenu, "Start WiFi", TFTGREEN, WIFI, [this]() {
-    display_obj.clearScreen();
-    this->drawStatusBar();
-    recon_obj.start(ReconMode::WIFI_RECON);
-  });
-  #ifdef HAS_BT
-    this->addNodes(&reconMenu, "Start BLE", TFTCYAN, BLUETOOTH, [this]() {
+  #ifdef HAS_DIRECT_UPLOAD
+    this->addNodes(&fullMenu, "Upload", TFTCYAN, GENERAL_APPS, [this]() {
       display_obj.clearScreen();
-      this->drawStatusBar();
-      recon_obj.start(ReconMode::BLE_RECON);
+      display_obj.tft.setTextWrap(false);
+      display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+      display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+      display_obj.tft.println("Loading...");
+
+      this->buildUploadFileMenu();
+
+      this->changeMenu(&uploadLogsMenu, true);
     });
   #endif
-  this->addNodes(&mainMenu, "Recon", TFTMAGENTA, GENERAL_APPS, [this]() {
-    this->changeMenu(&reconMenu, true);
+  this->addNodes(&fullMenu, "Manage Saved WiFi", TFTWHITE, SETTINGS, [this]() {
+    this->buildSavedWifiMenu(false);
+    this->changeMenu(&savedWifiMenu, true);
   });
-  this->addNodes(&mainMenu, text_table1[7], TFTGREEN, WIFI, [this]() {
-    this->changeMenu(&wifiMenu, true);
+  this->addNodes(&fullMenu, "Geofences", TFTGREEN, GPS_MENU, [this]() {
+    this->buildGeofenceMenu();
   });
-  #ifdef HAS_BT
-    this->addNodes(&mainMenu, text_table1[19], TFTCYAN, BLUETOOTH, [this]() {
-      this->changeMenu(&bluetoothMenu, true);
-    });
-  #endif
   #ifdef HAS_GPS
-	if (gps_obj.getGpsModuleStatus()) {
-    	this->addNodes(&mainMenu, text1_66, TFTRED, GPS_MENU, [this]() {
-      	this->changeMenu(&gpsMenu, true);
-    	});
-	}
+    if (gps_obj.getGpsModuleStatus()) {
+      this->addNodes(&fullMenu, "GPS", TFTRED, GPS_MENU, [this]() {
+        this->changeMenu(&gpsMenu, true);
+      });
+    }
   #endif
-  this->addNodes(&mainMenu, text_table1[9], TFTBLUE, DEVICE, [this]() {
+  this->addNodes(&fullMenu, "Settings", TFTBLUE, DEVICE, [this]() {
     this->changeMenu(&deviceMenu, true);
   });
-  this->addNodes(&mainMenu, text_table1[30], TFTLIGHTGREY, REBOOT, []() {
+  this->addNodes(&fullMenu, text_table1[30], TFTLIGHTGREY, REBOOT, []() {
     ESP.restart();
   });
 
+#if 0 // Pure Wardrive: pentest menu construction removed.
   // Build WiFi Menu
   wifiMenu.parentMenu = &mainMenu; // Main Menu is second menu parent
   this->addNodes(&wifiMenu, text09, TFTLIGHTGREY, 0, [this]() {
@@ -3642,6 +3759,7 @@ void MenuFunctions::RunSetup()
         this->changeMenu(wifiAPMenu.parentMenu, true);
       });
     #endif
+#endif // Pure Wardrive.
 
   //#endif
 
@@ -3680,9 +3798,13 @@ void MenuFunctions::RunSetup()
     }
   #endif
 
-  this->addNodes(&deviceMenu, "Save/Load Files", TFTCYAN, SD_UPDATE, [this]() {
-    this->changeMenu(&saveFileMenu, true);
-  });
+  #ifdef HAS_GPS
+    if (gps_obj.getGpsModuleStatus()) {
+      this->addNodes(&deviceMenu, "GPS", TFTRED, GPS_MENU, [this]() {
+        this->changeMenu(&gpsMenu, true);
+      });
+    }
+  #endif
 
   #ifndef HAS_MINI_SCREEN
     this->addNodes(&deviceMenu, "Brightness", TFTYELLOW, BRIGHTNESS, [this]() {
@@ -3700,6 +3822,10 @@ void MenuFunctions::RunSetup()
   });
   this->addNodes(&deviceMenu, "Geofences", TFTGREEN, GPS_MENU, [this]() {
     this->buildGeofenceMenu();
+  });
+  this->addNodes(&deviceMenu, "Manage Saved WiFi", TFTWHITE, SETTINGS, [this]() {
+    this->buildSavedWifiMenu(false);
+    this->changeMenu(&savedWifiMenu, true);
   });
 
   #ifdef HAS_SD
@@ -3722,6 +3848,7 @@ void MenuFunctions::RunSetup()
     }
   #endif
 
+#if 0 // Pure Wardrive: attack-list file menus removed.
   // Save Files Menu
   saveFileMenu.parentMenu = &deviceMenu;
   this->addNodes(&saveFileMenu, text09, TFTLIGHTGREY, 0, [this]() {
@@ -3781,11 +3908,12 @@ void MenuFunctions::RunSetup()
   this->addNodes(&loadATsMenu, text09, TFTLIGHTGREY, 0, [this]() {
     this->changeMenu(loadATsMenu.parentMenu, true);
   });
+#endif // Pure Wardrive.
 
   // GPS Menu
   #ifdef HAS_GPS
     if (gps_obj.getGpsModuleStatus()) {
-      gpsMenu.parentMenu = &mainMenu; // Main Menu is second menu parent
+      gpsMenu.parentMenu = &deviceMenu;
 
       this->addNodes(&gpsMenu, text09, TFTLIGHTGREY, 0, [this]() {
         this->changeMenu(gpsMenu.parentMenu, true);
@@ -3807,32 +3935,6 @@ void MenuFunctions::RunSetup()
         wifi_scan_obj.currentScanMode = GPS_TRACKER;
         this->changeMenu(&gpsInfoMenu, true);
         wifi_scan_obj.StartScan(GPS_TRACKER, TFT_CYAN);
-      });
-
-      this->addNodes(&gpsMenu, "GPS POI", TFTCYAN, GPS_MENU, [this]() {
-        wifi_scan_obj.StartScan(GPS_POI, TFT_CYAN);
-        wifi_scan_obj.currentScanMode = WIFI_SCAN_OFF;
-        this->changeMenu(&gpsPOIMenu, true);
-      });
-
-      // GPS POI Menu
-      gpsPOIMenu.parentMenu = &gpsMenu;
-      this->addNodes(&gpsPOIMenu, text09, TFTLIGHTGREY, 0, [this]() {
-        wifi_scan_obj.currentScanMode = GPS_POI;
-        wifi_scan_obj.StartScan(WIFI_SCAN_OFF);
-        this->changeMenu(gpsPOIMenu.parentMenu, true);
-      });
-      this->addNodes(&gpsPOIMenu, "Mark POI", TFTCYAN, GPS_MENU, [this]() {
-        wifi_scan_obj.currentScanMode = GPS_POI;
-        display_obj.tft.setCursor(0, TFT_HEIGHT / 2);
-        display_obj.clearScreen();
-        if (wifi_scan_obj.RunGPSInfo(true, false, true))
-          display_obj.showCenterText("POI Logged", TFT_HEIGHT / 2);
-        else
-          display_obj.showCenterText("POI Log Failed", TFT_HEIGHT / 2);
-        wifi_scan_obj.currentScanMode = WIFI_SCAN_OFF;
-        delay(2000);
-        this->changeMenu(&gpsPOIMenu, true);
       });
 
       // GPS Info Menu
@@ -4506,7 +4608,7 @@ void MenuFunctions::buildSavedWifiMenu(bool replace_mode) {
   this->releaseSavedWifiMenu();
   savedWifiMenu.list = new LinkedList<MenuNode>();
   savedWifiMenu.selected = 0;
-  savedWifiMenu.parentMenu = &wifiGeneralMenu;
+  savedWifiMenu.parentMenu = &deviceMenu;
   savedWifiMenu.name = replace_mode ? "Replace Saved WiFi" : "Saved WiFi";
 
   this->addNodes(&savedWifiMenu, replace_mode ? "Cancel" : text09, TFTLIGHTGREY, 0, [this, replace_mode]() {
@@ -5051,6 +5153,14 @@ void MenuFunctions::displayCurrentMenu(int start_index)
   marquee_selected = 0xFFFF;
   marquee_rendered_offset = 0;
   marquee_max_offset = 0;
+  marquee_selected_since = 0;
+  #ifdef HAS_FULL_SCREEN
+    if (current_menu == &mainMenu) {
+      this->displayHomeMenu();
+      this->displayMenuButtons();
+      return;
+    }
+  #endif
   display_obj.clearScreen();
   display_obj.updateBanner(current_menu->name);
   display_obj.tft.setTextColor(TFT_LIGHTGREY, TFT_DARKGREY);
@@ -5120,6 +5230,115 @@ void MenuFunctions::displayCurrentMenu(int start_index)
   }
 
   this->displayMenuButtons();
+}
+
+// PURE WARDRIVER home dashboard (blue theme): status row, AP counters,
+// GPS/SD box and three big SCAN/SYNC/MENU buttons. Navigation reuses the
+// standard UP/DOWN/SELECT touch zones.
+void MenuFunctions::displayHomeMenu() {
+  #ifdef HAS_SCREEN
+    // Keep the SCAN/STOP label in sync with the wardrive state.
+    if (current_menu->list != nullptr && current_menu->list->size() > 0) {
+      MenuNode scanNode = current_menu->list->get(0);
+      scanNode.name = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ? "STOP" : "SCAN";
+      current_menu->list->set(0, scanNode);
+    }
+    display_obj.tft.fillScreen(TFT_NAVY);
+    display_obj.tft.setTextWrap(false);
+    display_obj.tft.setFreeFont(NULL);
+
+    // Status row: WARDRIVE + battery
+    display_obj.tft.setTextSize(1);
+    display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+    display_obj.tft.setCursor(4, 4);
+    display_obj.tft.print("WARDRIVE");
+    #ifdef HAS_BATTERY
+      int8_t lvl = battery_obj.getBatteryLevel();
+      String batt = (lvl >= 0) ? ("BAT " + String(lvl) + "%") : "BAT --";
+    #else
+      String batt = "BAT --";
+    #endif
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.drawString(batt, SCREEN_WIDTH - 4 - batt.length() * 6, 4, 1);
+    display_obj.tft.drawFastHLine(0, 16, SCREEN_WIDTH, TFT_CYAN);
+
+    // APs captured + logo
+    display_obj.tft.setTextSize(1);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.drawCentreString("APs CAPTURED", SCREEN_WIDTH / 2, 20, 1);
+    display_obj.tft.drawXBitmap((SCREEN_WIDTH - wardriver_logo_small_width) / 2, 32,
+                                wardriver_logo_small_bits, wardriver_logo_small_width,
+                                wardriver_logo_small_height, TFT_WHITE, TFT_NAVY);
+    String counters = "WIFI " + (String)wifi_scan_obj.beacon_frames +
+                      " BLE " + (String)wifi_scan_obj.bt_frames +
+                      " FLOCK " + (String)wifi_scan_obj.flock_devices;
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.drawCentreString(counters, SCREEN_WIDTH / 2, 116, 1);
+
+    // GPS / state / SD box
+    display_obj.tft.drawRoundRect(8, 128, SCREEN_WIDTH - 16, 54, 4, TFT_CYAN);
+    display_obj.tft.setTextSize(1);
+    #ifdef HAS_GPS
+      String gpsLine = "GPS ";
+      if (gps_obj.getGpsModuleStatus()) {
+        if (gps_obj.getFixStatus()) {
+          display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+          gpsLine += "fix " + (String)gps_obj.getNumSats() + " sat";
+        } else {
+          display_obj.tft.setTextColor(TFT_YELLOW, TFT_NAVY);
+          gpsLine += "searching " + (String)gps_obj.getNumSats() + " sat";
+        }
+      } else {
+        display_obj.tft.setTextColor(TFT_DARKGREY, TFT_NAVY);
+        gpsLine += "--";
+      }
+    #else
+      display_obj.tft.setTextColor(TFT_DARKGREY, TFT_NAVY);
+      String gpsLine = "GPS --";
+    #endif
+    display_obj.tft.setCursor(16, 134);
+    display_obj.tft.print(gpsLine);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.setCursor(16, 148);
+    display_obj.tft.print(String("STATE ") + (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE ? "SCANNING" : "IDLE"));
+    display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+    display_obj.tft.setCursor(16, 162);
+    #ifdef HAS_SD
+      String sdLine = "SD ";
+      if (sd_obj.supported) {
+        String fn = buffer_obj.getFileName();
+        sdLine += (fn.length() > 0) ? fn.substring(0, 18) : "ready";
+      } else {
+        sdLine += "no card";
+      }
+    #else
+      String sdLine = "SD --";
+    #endif
+    display_obj.tft.print(sdLine);
+
+    // Three big buttons along the bottom
+    const uint16_t btn_y[3] = {186, 232, 278};
+    const uint16_t btn_h = 40;
+    const char* labels[3] = {"SCAN", "SYNC", "MENU"};
+    for (uint8_t i = 0; i < 3 && i < current_menu->list->size(); i++) {
+      char buf[32];
+      current_menu->list->get(i).name.toCharArray(buf, sizeof(buf));
+      bool sel = (current_menu->selected == i);
+      display_obj.key[i].initButton(&display_obj.tft,
+                                    SCREEN_WIDTH / 2,
+                                    btn_y[i] + btn_h / 2,
+                                    SCREEN_WIDTH - 16,
+                                    btn_h,
+                                    sel ? TFT_CYAN : TFT_NAVY,
+                                    sel ? TFT_NAVY : TFT_CYAN,
+                                    TFT_CYAN,
+                                    buf,
+                                    2);
+      display_obj.key[i].drawButton(sel, buf);
+      (void)labels;
+    }
+    display_obj.tft.setTextSize(1);
+  #endif
 }
 
 // ============================================================

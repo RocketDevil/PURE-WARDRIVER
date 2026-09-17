@@ -18,7 +18,7 @@
 #define BATTERY_ANALOG_ON 0
 
 #include "WiFiScan.h"
-#include "ReconMission.h"
+// Pure Wardrive: ReconMission removed.
 #include "TargetListSort.h"
 #include "BatteryInterface.h"
 #include "SDInterface.h"
@@ -45,7 +45,7 @@
 #endif
 
 extern WiFiScan wifi_scan_obj;
-extern ReconMission recon_obj;
+// Pure Wardrive: ReconMission removed.
 extern SDInterface sd_obj;
 // #ifdef HAS_BATTERY
 extern BatteryInterface battery_obj;
@@ -133,24 +133,14 @@ class MenuFunctions
 {
   private:
 
-    enum class FoxHuntListKind : uint8_t {
-      AP_TARGETS,
-      APS_WITH_STATIONS,
-      STATION_TARGETS,
-      PINEAPPLE_TARGETS,
-      MULTISSID_TARGETS,
-      BLE_TARGETS,
-      FINDMY_TARGETS,
-      FLIPPER_TARGETS,
-      META_TARGETS,
-      FLOCK_TARGETS,
-    };
+    // Pure Wardrive: FoxHunt removed.
 
     String u_result = "";
 
 
     float _graph_scale = 1.0;
     uint32_t initTime = 0;
+    uint32_t last_scan_toggle_ms = 0;
     int menu_start_index = 0;
     uint8_t mini_kb_index = 0;
     uint8_t old_gps_sat_count = 0;
@@ -164,37 +154,20 @@ class MenuFunctions
     MenuInputRepeat menu_down_repeat;
     int8_t menu_touch_button = -1;
 
-    void buildWiFiFoxHuntMenu();
-    void buildBluetoothFoxHuntMenu();
-    void buildFoxTargetList(FoxHuntListKind type, int context_ap = -1);
-    void buildFoxSortMenu();
-    void buildFoxFilterMenu();
-    const char* foxSortLabel() const;
-    const char* foxFilterLabel() const;
-    bool foxListSupportsRecent() const;
-    bool foxListSupportsBand() const;
-
-    FoxHuntListKind fox_target_list = FoxHuntListKind::AP_TARGETS;
-    int fox_target_context_ap = -1;
-    TargetSortMode fox_sort_mode = TargetSortMode::SIGNAL_DESC;
-    TargetFilterMode fox_filter_mode = TargetFilterMode::ALL;
+    // Pure Wardrive: FoxHunt removed.
 
     // Main menu stuff
     Menu mainMenu;
-    Menu reconMenu;
+    Menu fullMenu;
 
-    Menu wifiMenu;
-    Menu bluetoothMenu;
     #ifdef HAS_GPS
       Menu gpsMenu;   // H4W9 Added GPS Menu option to Main Menu
     #endif
-    Menu badusbMenu;
     Menu deviceMenu;
 
     // Device menu stuff
     //Menu whichUpdateMenu;
     Menu failedUpdateMenu;
-    Menu confirmMenu;
     Menu updateMenu;
     Menu settingsMenu;
     Menu specSettingMenu;
@@ -217,50 +190,12 @@ class MenuFunctions
     void ensureSDDeleteBrowserResources();
     void releaseSDDeleteBrowserResources();
 
-    // WiFi menu stuff
-    Menu wifiSnifferMenu;
-    Menu wifiScannerMenu;
-    Menu wifiAttackMenu;
-    /*#ifdef HAS_GPS
-      Menu wardrivingMenu;
-    #endif*/
-    Menu wifiGeneralMenu;
-    Menu wifiAPMenu;
+    // Pure Wardrive: pentest menus removed.
     Menu savedWifiMenu;
-    Menu wifiIPMenu;
-    Menu ssidsMenu;
-    //#ifdef HAS_BT
-    //  Menu airtagMenu;
-    //#endif
-    //#ifndef HAS_ILI9341
-      Menu wifiStationMenu;
-    //#endif
-
-    // WiFi General Menu
-    Menu htmlMenu;
     Menu miniKbMenu;
-    Menu saveFileMenu;
-    Menu genAPMacMenu;
-    Menu cloneAPMacMenu;
-    Menu setMacMenu;
-    Menu selectProbeSSIDsMenu;
-
-    // Bluetooth menu stuff
-    Menu bluetoothSnifferMenu;
-    Menu bluetoothAttackMenu;
-
-    // Settings things menus
-    Menu generateSSIDsMenu;
-
-    Menu evilPortalMenu;
-
-    Menu foxHuntMenu;
-    Menu foxSortMenu;
-    Menu foxFilterMenu;
 
     #ifdef HAS_DIRECT_UPLOAD
-      Menu deleteAllMenu;
-      Menu uploadAllMenu;
+      Menu fileActionMenu;
     #endif
 
     //static void lv_tick_handler();
@@ -268,6 +203,10 @@ class MenuFunctions
     // Menu icons
 
     void buildUploadFileMenu();
+    void buildHomeMenu();
+    void displayHomeMenu();
+    void buildFileActionMenu(const String& filename);
+    void doUpload(const String& filename, uint8_t uploadType, const char* label);
     void setupSDFileList(bool update = false);
     void buildSDFileMenu(bool update = false);
     void buildSavedWifiMenu(bool replace_mode = false);
@@ -328,29 +267,16 @@ class MenuFunctions
 
   public:
     Menu* current_menu;
-    Menu clearSSIDsMenu;
-    Menu clearAPsMenu;
-    
-    // Save Files Menu
-    Menu saveSSIDsMenu;
-    Menu loadSSIDsMenu;
-    Menu saveAPsMenu;
-    Menu loadAPsMenu;
-    Menu saveATsMenu;
-    Menu loadATsMenu;
 
     #ifdef HAS_GPS
       // GPS Menu
       Menu gpsInfoMenu;
-      Menu gpsPOIMenu;
     #endif
 
     Menu infoMenu;
-    Menu apInfoMenu;
 
     #ifdef HAS_DIRECT_UPLOAD
       Menu uploadLogsMenu;
-      Menu actionMenu;
     #endif
 
     //Ticker tick;
@@ -374,6 +300,7 @@ class MenuFunctions
     void main(uint32_t currentTime);
     void RunSetup();
     void orientDisplay();
+    void showBootChecklist();
 };
 
 

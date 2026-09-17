@@ -37,7 +37,7 @@ https://www.online-utility.org/image/convert/to/XBM
 
 #include "settings.h"
 #include "CommandLine.h"
-#include "ReconMission.h"
+// Pure Wardrive: ReconMission removed.
 #include "lang_var.h"
 
 #ifdef HAS_T_DONGLE_DISPLAY
@@ -75,11 +75,10 @@ https://www.online-utility.org/image/convert/to/XBM
 #endif
 
 WiFiScan wifi_scan_obj;
-EvilPortal evil_portal_obj;
 Buffer buffer_obj;
 Settings settings_obj;
 CommandLine cli_obj;
-ReconMission recon_obj;
+// Pure Wardrive: ReconMission removed.
 
 #ifdef HAS_T_DONGLE_DISPLAY
   TDongleDisplay t_dongle_display;
@@ -365,7 +364,7 @@ void setup()
     t_dongle_display.begin();
   #endif
 
-  evil_portal_obj.setup();
+  // Pure Wardrive: EvilPortal removed.
 
   #ifdef HAS_BATTERY
     battery_obj.RunSetup();
@@ -412,7 +411,12 @@ void setup()
   menu_function_obj.changeMenu(menu_function_obj.current_menu);*/
 
   wifi_scan_obj.StartScan(WIFI_SCAN_OFF);
-  
+
+  #ifdef HAS_SCREEN
+    // PURE WARDRIVER boot checklist, then home menu.
+    menu_function_obj.showBootChecklist();
+  #endif
+   
   cli_obj.RunSetup();
 }
 
@@ -447,7 +451,7 @@ void loop()
   // Update all of our objects
   cli_obj.main(currentTime);
   wifi_scan_obj.main(currentTime);
-  recon_obj.main(currentTime);
+  // Pure Wardrive: ReconMission removed.
 
   #ifdef HAS_T_DONGLE_DISPLAY
     t_dongle_display.update(currentTime, wifi_scan_obj);
