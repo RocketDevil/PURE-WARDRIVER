@@ -8,3 +8,11 @@ coverage.xml
 esp32_marauder/.vscode/settings.json
 __pycache__/
 *.pyc
+
+# PURE WARDRIVER: local build outputs
+build_*/
+build_output*/
+arduino-data/
+*.elf
+*.map
+
