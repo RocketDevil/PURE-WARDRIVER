@@ -72,7 +72,7 @@ sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
 Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 (see `.github/workflows/build_parallel.yml` for versions).
 
-## Building (M5 Cardputer ADV, friend test build)
+## Building (M5 Cardputer ADV, <ins> Still Testing this Build atm!!! </ins>)
 
 Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11):
 
