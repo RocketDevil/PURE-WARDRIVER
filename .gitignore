@@ -18,3 +18,8 @@ arduino-data/
 
 V8_DisplayPinScanner/build/
 
+sketchbooks/*/libraries/
+sketchbooks/*/data/
+sketchbooks/*/build/
+build_cpadv/
+

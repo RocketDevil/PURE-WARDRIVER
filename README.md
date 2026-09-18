@@ -68,6 +68,17 @@ sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
 Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 (see `.github/workflows/build_parallel.yml` for versions).
 
+## Building (M5 Cardputer ADV, friend test build)
+
+Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11):
+
+```powershell
+.\tools\arduino-cli.exe compile --config-file sketchbooks/CP-ADV/arduino-cli.yaml `
+  --fqbn "esp32:esp32:esp32s3:PartitionScheme=min_spiffs,FlashSize=8M,PSRAM=disabled" `
+  --build-property "compiler.cpp.extra_flags=-DMARAUDER_CARDPUTER_ADV" `
+  --warnings none ./esp32_marauder --output-dir ./build_cpadv
+```
+
 
 ## Attribution / License
 
