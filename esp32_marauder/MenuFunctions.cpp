@@ -2,7 +2,7 @@
 #include "MenuMarquee.h"
 #include "CommandLine.h"
 #include "OwnedListLifecycle.h"
-#include "PureWardriverLogo.h"
+#include "PureWardriverBg.h"
 #include "lang_var.h"
 
 #ifdef HAS_SCREEN
@@ -1875,13 +1875,18 @@ bool MenuFunctions::isKeyPressed(char c)
 // PURE WARDRIVER boot checklist (blue theme). Called once at end of setup.
 void MenuFunctions::showBootChecklist() {
   #ifdef HAS_SCREEN
-    display_obj.tft.fillScreen(TFT_NAVY);
+    if (display_obj.tft.width() == wardriver_bg_width &&
+        display_obj.tft.height() == wardriver_bg_height) {
+      display_obj.tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
+    } else {
+      display_obj.tft.fillScreen(TFT_NAVY);
+    }
     display_obj.tft.setTextWrap(false);
     display_obj.tft.setFreeFont(NULL);
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_CYAN);
     display_obj.tft.drawCentreString("V8 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
-    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("ESP32-C5", SCREEN_WIDTH / 2, 20, 1);
     display_obj.tft.drawFastHLine(0, 32, SCREEN_WIDTH, TFT_CYAN);
 
@@ -1925,7 +1930,7 @@ void MenuFunctions::showBootChecklist() {
     const uint8_t rowCount = sizeof(rows) / sizeof(rows[0]);
     for (uint8_t i = 0; i < rowCount; i++) {
       uint16_t y = 42 + i * 20;
-      display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+      display_obj.tft.setTextColor(TFT_WHITE);
       display_obj.tft.setCursor(12, y);
       display_obj.tft.print(String("> ") + rows[i].label);
       if (rows[i].extra.length() > 0) {
@@ -1933,11 +1938,11 @@ void MenuFunctions::showBootChecklist() {
         display_obj.tft.print(rows[i].extra);
       }
       String state = rows[i].ok ? "OK" : "--";
-      display_obj.tft.setTextColor(rows[i].ok ? TFT_GREEN : TFT_DARKGREY, TFT_NAVY);
+      display_obj.tft.setTextColor(rows[i].ok ? TFT_GREEN : TFT_DARKGREY);
       display_obj.tft.drawString(state, SCREEN_WIDTH - 12 - state.length() * 6, y, 1);
     }
 
-    display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_GREEN);
     display_obj.tft.drawCentreString(">> WARDRIVER ONLINE", SCREEN_WIDTH / 2, 42 + rowCount * 20 + 8, 1);
     delay(2500);
     this->changeMenu(&mainMenu, true);
@@ -3982,6 +3987,9 @@ void MenuFunctions::RunSetup()
   });
   for (int i = 0; i < settings_obj.getNumberSettings(); i++) {
     String settingName = settings_obj.setting_index_to_name(i);
+    // PURE WARDRIVER: hide attack-related settings (ForcePMKID/ForceProbe/EPDeauth).
+    if (settingName == "ForcePMKID" || settingName == "ForceProbe" || settingName == "EPDeauth")
+      continue;
     const char* type = this->callSetting(settingName.c_str());
     if (type && strcmp(type, "bool") == 0) {
       this->addNodes(&settingsMenu, settingName.c_str(), TFTLIGHTGREY, SETTINGS, [this, i, settingName]() {
@@ -5269,13 +5277,18 @@ void MenuFunctions::displayHomeMenu() {
       scanNode.name = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ? "STOP" : "SCAN";
       current_menu->list->set(0, scanNode);
     }
-    display_obj.tft.fillScreen(TFT_NAVY);
+    if (display_obj.tft.width() == wardriver_bg_width &&
+        display_obj.tft.height() == wardriver_bg_height) {
+      display_obj.tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
+    } else {
+      display_obj.tft.fillScreen(TFT_NAVY);
+    }
     display_obj.tft.setTextWrap(false);
     display_obj.tft.setFreeFont(NULL);
 
     // Status row: WARDRIVE + battery
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_CYAN);
     display_obj.tft.setCursor(4, 4);
     display_obj.tft.print("WARDRIVE");
     #ifdef HAS_BATTERY
@@ -5284,22 +5297,22 @@ void MenuFunctions::displayHomeMenu() {
     #else
       String batt = "BAT --";
     #endif
-    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawString(batt, SCREEN_WIDTH - 4 - batt.length() * 6, 4, 1);
     display_obj.tft.drawFastHLine(0, 16, SCREEN_WIDTH, TFT_CYAN);
 
-    // APs captured + logo
+    // Scan results: WIFI + BLE big, FLOCK small below.
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("APs CAPTURED", SCREEN_WIDTH / 2, 20, 1);
-    display_obj.tft.drawXBitmap((SCREEN_WIDTH - wardriver_logo_small_width) / 2, 32,
-                                wardriver_logo_small_bits, wardriver_logo_small_width,
-                                wardriver_logo_small_height, TFT_WHITE, TFT_NAVY);
-    String counters = "WIFI " + (String)wifi_scan_obj.beacon_frames +
-                      " BLE " + (String)wifi_scan_obj.bt_frames +
-                      " FLOCK " + (String)wifi_scan_obj.flock_devices;
-    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
-    display_obj.tft.drawCentreString(counters, SCREEN_WIDTH / 2, 116, 1);
+    display_obj.tft.setTextSize(3);
+    display_obj.tft.setTextColor(TFT_GREEN);
+    display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames, SCREEN_WIDTH / 2, 36, 1);
+    display_obj.tft.setTextColor(TFT_CYAN);
+    display_obj.tft.drawCentreString("BLE " + (String)wifi_scan_obj.bt_frames, SCREEN_WIDTH / 2, 66, 1);
+    display_obj.tft.setTextSize(1);
+    display_obj.tft.setTextColor(TFT_RED);
+    display_obj.tft.drawCentreString("FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
 
     // GPS / state / SD box
     display_obj.tft.drawRoundRect(8, 128, SCREEN_WIDTH - 16, 54, 4, TFT_CYAN);
@@ -5308,26 +5321,26 @@ void MenuFunctions::displayHomeMenu() {
       String gpsLine = "GPS ";
       if (gps_obj.getGpsModuleStatus()) {
         if (gps_obj.getFixStatus()) {
-          display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+          display_obj.tft.setTextColor(TFT_GREEN);
           gpsLine += "fix " + (String)gps_obj.getNumSats() + " sat";
         } else {
-          display_obj.tft.setTextColor(TFT_YELLOW, TFT_NAVY);
+          display_obj.tft.setTextColor(TFT_YELLOW);
           gpsLine += "searching " + (String)gps_obj.getNumSats() + " sat";
         }
       } else {
-        display_obj.tft.setTextColor(TFT_DARKGREY, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_DARKGREY);
         gpsLine += "--";
       }
     #else
-      display_obj.tft.setTextColor(TFT_DARKGREY, TFT_NAVY);
+      display_obj.tft.setTextColor(TFT_DARKGREY);
       String gpsLine = "GPS --";
     #endif
     display_obj.tft.setCursor(16, 134);
     display_obj.tft.print(gpsLine);
-    display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.setCursor(16, 148);
     display_obj.tft.print(String("STATE ") + (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE ? "SCANNING" : "IDLE"));
-    display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+    display_obj.tft.setTextColor(TFT_GREEN);
     display_obj.tft.setCursor(16, 162);
     #ifdef HAS_SD
       String sdLine = "SD ";

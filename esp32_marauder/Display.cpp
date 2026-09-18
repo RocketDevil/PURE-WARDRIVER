@@ -1,5 +1,5 @@
 #include "Display.h"
-#include "PureWardriverLogo.h"
+#include "PureWardriverBg.h"
 #include "DisplayLine.h"
 #include "lang_var.h"
 
@@ -254,26 +254,27 @@ void Display::drawBootSplash() {
   const marauder::BootSplashLayout layout =
       marauder::bootSplashLayout(width, height, half_scale_logo);
 
-  // PURE WARDRIVER branding: blue boot screen, logo placeholder.
-  // The project logo will replace the placeholder frame later.
-  tft.fillScreen(TFT_NAVY);
+  // PURE WARDRIVER branding: original logo artwork as background
+  // (dimmed, readable under white text). Other panel sizes: plain navy.
+  if (width == wardriver_bg_width && height == wardriver_bg_height) {
+    tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
+  } else {
+    tft.fillScreen(TFT_NAVY);
+  }
   tft.setTextWrap(false);
   tft.setFreeFont(NULL);
   tft.setTextSize(layout.text_size);
-  tft.setTextColor(TFT_WHITE, TFT_NAVY);
+  tft.setTextColor(TFT_WHITE);
   tft.drawCentreString("V8 PURE WARDRIVE", width / 2, layout.title_y, 1);
   tft.setTextSize(1);
-  tft.setTextColor(TFT_CYAN, TFT_NAVY);
+  tft.setTextColor(TFT_CYAN);
   tft.drawCentreString("ESP32-C5", width / 2, layout.title_y + 18, 1);
 
-  // PURE WARDRIVER logo (white on blue).
-  tft.drawXBitmap((width - wardriver_logo_big_width) / 2, layout.logo_y,
-                  wardriver_logo_big_bits, wardriver_logo_big_width,
-                  wardriver_logo_big_height, TFT_WHITE, TFT_NAVY);
+  // PURE WARDRIVER logo artwork is the background (see above).
 
-  tft.setTextColor(TFT_WHITE, TFT_NAVY);
+  tft.setTextColor(TFT_WHITE);
   tft.drawCentreString(version_number, width / 2, layout.version_y, 1);
-  tft.setTextColor(TFT_YELLOW, TFT_NAVY);
+  tft.setTextColor(TFT_YELLOW);
   tft.drawCentreString("Initializing...", width / 2, layout.status_y, 1);
   tft.setTextSize(1);
 }

@@ -4802,29 +4802,16 @@ void WiFiScan::RunInfo() {
     display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
     display_obj.tft.setTextSize(1);
     display_obj.tft.setTextColor(TFT_CYAN);
-    display_obj.tft.println(text_table4[20]);
-    display_obj.tft.println(text_table4[21] + display_obj.version_number);
+    display_obj.tft.println("PURE WARDRIVER");
+    display_obj.tft.println("Version: " + (String)PURE_WARDRIVER_VERSION);
     display_obj.tft.println("Hardware: " + (String)HARDWARE_NAME);
     display_obj.tft.println(text_table4[22] + (String)esp_get_idf_version());
   #endif
 
-  Serial.println(text_table4[20]);
-  Serial.println(text_table4[21] + (String)MARAUDER_VERSION);
+  Serial.println("PURE WARDRIVER");
+  Serial.println("Version: " + (String)PURE_WARDRIVER_VERSION);
   Serial.println("Hardware: " + (String)HARDWARE_NAME);
   Serial.println(text_table4[22] + (String)esp_get_idf_version());
-
-  if (this->wsl_bypass_enabled) {
-    #ifdef HAS_SCREEN
-      display_obj.tft.println(text_table4[23]);
-    #endif
-    Serial.println(text_table4[23]);
-  }
-  else {
-    #ifdef HAS_SCREEN
-      display_obj.tft.println(text_table4[24]);
-    #endif
-    Serial.println(text_table4[24]);
-  }
 
   #ifdef HAS_SCREEN
     display_obj.tft.println(text_table4[25] + macToString(sta_mac));
