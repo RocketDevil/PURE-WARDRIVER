@@ -238,7 +238,6 @@
 #define UPLOAD_WIFI_FILE "/wifi-upload-credentials.txt"
 #define UPLOAD_API_FILE "/API.txt"
 #define UPLOAD_WIFI_IDLE_MS (5UL * 60UL * 1000UL)
-#define UPLOAD_WIFI_RETRY_MS (30UL * 1000UL)
 
 // Pure Wardrive: EvilPortal removed.
 

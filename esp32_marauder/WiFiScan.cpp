@@ -1862,7 +1862,7 @@ void WiFiScan::RunSetup() {
 
         if (settings_obj.saveSetting<bool>("wu", contents)) {
           // PURE WARDRIVER: key file stays on SD as persistent config.
-          Serial.println("Saved WiGLE API Name: " + contents);
+          Serial.println("Saved WiGLE API Name (" + (String)contents.length() + " chars)");
         } else {
           Serial.println("Failed to save WiGLE API Name");
         }
@@ -1886,7 +1886,7 @@ void WiFiScan::RunSetup() {
 
         if (settings_obj.saveSetting<bool>("wt", contents)) {
           // PURE WARDRIVER: key file stays on SD as persistent config.
-          Serial.println("Saved WiGLE API Token: " + contents);
+          Serial.println("Saved WiGLE API Token (" + (String)contents.length() + " chars)");
         } else {
           Serial.println("Failed to save WiGLE API Token");
         }
@@ -1911,7 +1911,7 @@ void WiFiScan::RunSetup() {
 
         if (settings_obj.saveSetting<bool>(WDG_KEY_NAME, contents)) {
           // PURE WARDRIVER: key file stays on SD as persistent config.
-          Serial.println("Saved WDG API Token: " + contents);
+          Serial.println("Saved WDG API Token (" + (String)contents.length() + " chars)");
         } else {
           Serial.println("Failed to save WDG API Token");
         }
@@ -11726,11 +11726,9 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       this->upload_link_ms = millis();
       return true;
     }
-    // Cooldown to avoid a 10s connect stall on every SYNC open out of range.
-    // upload_last_try_ms == 0 means "never tried" (e.g. boot): always try.
-    if (this->upload_last_try_ms != 0 &&
-        (millis() - this->upload_last_try_ms) < UPLOAD_WIFI_RETRY_MS)
-      return false;
+    // No cooldown: every caller is an explicit user action (boot, SYNC open,
+    // upload start). A failed attempt costs a 10s stall, a skipped attempt
+    // costs a failed upload.
     this->upload_last_try_ms = millis();
     String ssid, pass;
     if (!this->loadUploadCredentials(ssid, pass)) {

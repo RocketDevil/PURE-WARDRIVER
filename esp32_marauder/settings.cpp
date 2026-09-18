@@ -505,7 +505,8 @@ void Settings::printJsonSettings(String json_string) {
     String setting_name = json["Settings"][i]["name"].as<String>();
     Serial.println("Name: " + setting_name);
     Serial.println("Type: " + json["Settings"][i]["type"].as<String>());
-    if (setting_name == "ClientPW" || setting_name == SAVED_WIFI_KEY_NAME)
+    if (setting_name == "ClientPW" || setting_name == SAVED_WIFI_KEY_NAME ||
+        setting_name == "wu" || setting_name == "wt" || setting_name == WDG_KEY_NAME)
       Serial.println(F("Value: [redacted]\n"));
     else
       Serial.println("Value: " + json["Settings"][i]["value"].as<String>() + "\n");
