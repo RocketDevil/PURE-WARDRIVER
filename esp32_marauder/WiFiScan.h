@@ -770,7 +770,7 @@ class WiFiScan
     static MacEntry mac_entries[mac_history_len_half];
     static uint8_t mac_entry_state[mac_history_len_half];
 
-    String header_line = "WigleWifi-1.6,appRelease=" + (String)MARAUDER_VERSION + ",model=ESP32 Marauder,release=" + (String)MARAUDER_VERSION + ",device=ESP32 Marauder,display=SPI TFT,board=ESP32 Marauder,brand=JustCallMeKoko,star=Sol,body=3,subBody=0\nMAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type\n";
+    String header_line = "WigleWifi-1.6,appRelease=" + (String)PURE_WARDRIVER_VERSION + ",model=PURE WARDRIVER,release=" + (String)PURE_WARDRIVER_VERSION + ",device=PURE WARDRIVER,display=SPI TFT,board=Marauder v8,brand=PURE WARDRIVER,star=Sol,body=3,subBody=0\nMAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type\n";
 
     static uint16_t channelToFrequency(uint8_t channel) {
       if (channel >= 1 && channel <= 14)

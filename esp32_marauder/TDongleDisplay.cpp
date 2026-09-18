@@ -22,7 +22,7 @@ void TDongleDisplay::begin() {
   tft.setTextFont(1);
   tft.setTextSize(1);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-  tft.drawString("MARAUDER CLI", 2, 1);
+  tft.drawString("PURE WARDRIVER", 2, 1);
   tft.drawFastHLine(0, 11, tft.width(), TFT_DARKGREY);
   digitalWrite(kBacklightPin, LOW);
 }

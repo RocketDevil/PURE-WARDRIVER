@@ -498,10 +498,10 @@ bool SDInterface::validateUpdate(File &updateBin) {
   if (!scanner.found()) {
     #ifdef HAS_SCREEN
       display_obj.tft.setTextColor(TFT_RED);
-      display_obj.tft.println(F("Rejected: not a validated Marauder image"));
+      display_obj.tft.println(F("Rejected: not a validated PURE WARDRIVER image"));
       display_obj.tft.setTextColor(TFT_WHITE);
     #endif
-    Serial.println(F("Rejected SD update: Marauder firmware identity not found"));
+    Serial.println(F("Rejected SD update: PURE WARDRIVER firmware identity not found"));
     return false;
   }
 

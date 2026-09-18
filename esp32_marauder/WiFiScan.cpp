@@ -6375,7 +6375,7 @@ void WiFiScan::openPoiFile() {
     poiFileName = "/wardrive_poi_" + String(fileIndex) + ".gpx";
     poiFile = SD.open(poiFileName, FILE_WRITE);
     if (poiFile) {
-      poiFile.print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"ESP32Marauder\">\n");
+      poiFile.print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"PURE WARDRIVER\">\n");
       poiFile.close();
       poiFileOpen = true;
       poiCount = 0;
