@@ -60,9 +60,8 @@ void CommandLine::RunSetup() {
   #endif
 
   Serial.println(F("\n\n--------------------------------\n"));
-  Serial.println(F("         ESP32 Marauder      \n"));
-  Serial.println("            " + version_number + "\n");
-  Serial.println(F("       By: justcallmekoko\n"));
+  Serial.println(F("         PURE WARDRIVER      \n"));
+  Serial.println("            " + (String)PURE_WARDRIVER_VERSION + "\n");
   Serial.println(F("--------------------------------\n\n"));
   
   Serial.print("> ");

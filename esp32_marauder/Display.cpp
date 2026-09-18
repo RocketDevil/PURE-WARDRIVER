@@ -273,7 +273,7 @@ void Display::drawBootSplash() {
   // PURE WARDRIVER logo artwork is the background (see above).
 
   tft.setTextColor(TFT_WHITE);
-  tft.drawCentreString(version_number, width / 2, layout.version_y, 1);
+  tft.drawCentreString(PURE_WARDRIVER_VERSION, width / 2, layout.version_y, 1);
   tft.setTextColor(TFT_YELLOW);
   tft.drawCentreString("Initializing...", width / 2, layout.status_y, 1);
   tft.setTextSize(1);
