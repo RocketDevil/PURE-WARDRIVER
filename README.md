@@ -44,10 +44,13 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
 ## Hardware
 
 PURE WARDRIVER is built primarily for the **Marauder V8**
-(ESP32-C5, touch display, GPS, SD) — `firmware/Pure-Wardrive-V8.bin`.
+(ESP32-C5, touch display, GPS, SD) —
+[Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-V8.bin)
+([all files](firmware/)).
 
 More devices are in progress. In testing right now: **M5 Cardputer ADV**
-(keyboard instead of touch) — `firmware/Pure-Wardrive-CP-ADV.bin`.
+(keyboard instead of touch) —
+[Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CP-ADV.bin).
 Feedback welcome!
 
 ## Flashing
