@@ -1,5 +1,4 @@
 #include "Display.h"
-#include "PureWardriverBg.h"
 #include "DisplayLine.h"
 #include "lang_var.h"
 
@@ -254,13 +253,9 @@ void Display::drawBootSplash() {
   const marauder::BootSplashLayout layout =
       marauder::bootSplashLayout(width, height, half_scale_logo);
 
-  // PURE WARDRIVER branding: original logo artwork as background
-  // (dimmed, readable under white text). Other panel sizes: plain navy.
-  if (width == wardriver_bg_width && height == wardriver_bg_height) {
-    tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
-  } else {
-    tft.fillScreen(TFT_NAVY);
-  }
+  // PURE WARDRIVER branding: plain navy for now (logo background
+  // disabled until the new artwork arrives).
+  tft.fillScreen(TFT_NAVY);
   tft.setTextWrap(false);
   tft.setFreeFont(NULL);
   tft.setTextSize(layout.text_size);

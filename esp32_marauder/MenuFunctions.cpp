@@ -2,7 +2,6 @@
 #include "MenuMarquee.h"
 #include "CommandLine.h"
 #include "OwnedListLifecycle.h"
-#include "PureWardriverBg.h"
 #include "lang_var.h"
 
 #ifdef HAS_SCREEN
@@ -1875,12 +1874,9 @@ bool MenuFunctions::isKeyPressed(char c)
 // PURE WARDRIVER boot checklist (blue theme). Called once at end of setup.
 void MenuFunctions::showBootChecklist() {
   #ifdef HAS_SCREEN
-    if (display_obj.tft.width() == wardriver_bg_width &&
-        display_obj.tft.height() == wardriver_bg_height) {
-      display_obj.tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
-    } else {
-      display_obj.tft.fillScreen(TFT_NAVY);
-    }
+    // PURE WARDRIVER: plain navy for now (logo background disabled
+    // until the new artwork arrives).
+    display_obj.tft.fillScreen(TFT_NAVY);
     display_obj.tft.setTextWrap(false);
     display_obj.tft.setFreeFont(NULL);
     display_obj.tft.setTextSize(1);
@@ -5277,12 +5273,9 @@ void MenuFunctions::displayHomeMenu() {
       scanNode.name = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ? "STOP" : "SCAN";
       current_menu->list->set(0, scanNode);
     }
-    if (display_obj.tft.width() == wardriver_bg_width &&
-        display_obj.tft.height() == wardriver_bg_height) {
-      display_obj.tft.pushImage(0, 0, wardriver_bg_width, wardriver_bg_height, wardriver_bg_bits);
-    } else {
-      display_obj.tft.fillScreen(TFT_NAVY);
-    }
+    // PURE WARDRIVER: plain navy for now (logo background disabled
+    // until the new artwork arrives).
+    display_obj.tft.fillScreen(TFT_NAVY);
     display_obj.tft.setTextWrap(false);
     display_obj.tft.setFreeFont(NULL);
 
