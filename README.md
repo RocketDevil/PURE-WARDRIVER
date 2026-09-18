@@ -14,6 +14,33 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
 - **MENU** — upload file browser, Saved WiFi, geofences, GPS tools, settings
 - Boot self-test, blue touch UI, 5s SCAN toggle guard + pocket-press guard
 
+## First run
+
+1. Copy the ready-made files from `sd-card/` in this repo onto the
+   microSD card (root directory) and fill in your values:
+   `wifi-upload-credentials.txt`:
+   ```
+   ssid=YourWiFiName
+   pass=YourWiFiPassword
+   ```
+   API keys, either as `API.txt`:
+   ```
+   wdg_key=YOUR_WDGWARS_KEY
+   wu=YOUR_WIGLE_USERNAME
+   wt=YOUR_WIGLE_TOKEN
+   ```
+   or as three single-value files (same effect):
+   `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
+   (each file holds just the key, nothing else).
+   Untouched `YOUR_...` placeholders are ignored by the firmware.
+2. Power on: the firmware loads the API keys and connects to your WiFi
+   right away to verify the link. If no upload starts within 5 minutes,
+   WiFi switches off again to save battery — opening SYNC reconnects.
+3. Wait for GPS fix.
+4. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
+5. Press **STOP** (5s guard against double-taps) to stop.
+6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
+
 ## Hardware
 
 Primary target: **Marauder V8** (ESP32-C5, touch display, GPS, SD).
@@ -41,32 +68,6 @@ sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
 Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 (see `.github/workflows/build_parallel.yml` for versions).
 
-## First run
-
-1. Copy the ready-made files from `sd-card/` in this repo onto the
-   microSD card (root directory) and fill in your values:
-   `wifi-upload-credentials.txt`:
-   ```
-   ssid=YourWiFiName
-   pass=YourWiFiPassword
-   ```
-   API keys, either as `API.txt`:
-   ```
-   wdg_key=YOUR_WDGWARS_KEY
-   wu=YOUR_WIGLE_USERNAME
-   wt=YOUR_WIGLE_TOKEN
-   ```
-   or as three single-value files (same effect):
-   `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
-   (each file holds just the key, nothing else).
-   Untouched `YOUR_...` placeholders are ignored by the firmware.
-2. Power on: the firmware loads the API keys and connects to your WiFi
-   right away to verify the link. If no upload starts within 5 minutes,
-   WiFi switches off again to save battery — opening SYNC reconnects.
-3. Wait for GPS fix.
-4. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
-5. Press **STOP** (5s guard against double-taps) to stop.
-6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
 
 ## Attribution / License
 
