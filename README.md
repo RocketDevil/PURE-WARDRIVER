@@ -27,6 +27,10 @@ Use a release `.bin` (or build it yourself, see below) and flash it with
 
 ## Building (V8)
 
+Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook.
+Display setup: copy `tft-setups/User_Setup_marauder_v8.h` into your
+sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
+
 ```powershell
 .\tools\arduino-cli.exe compile `
   --fqbn "esp32:esp32:esp32c5:FlashSize=8M,PartitionScheme=default_8MB,PSRAM=enabled" `
@@ -39,8 +43,8 @@ Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 
 ## First run
 
-1. Copy the ready-made files from this repo onto the microSD card
-   (root directory) and fill in your values:
+1. Copy the ready-made files from `sd-card/` in this repo onto the
+   microSD card (root directory) and fill in your values:
    `wifi-upload-credentials.txt`:
    ```
    ssid=YourWiFiName
