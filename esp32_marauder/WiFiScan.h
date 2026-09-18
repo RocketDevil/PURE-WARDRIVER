@@ -970,6 +970,8 @@ class WiFiScan
     bool upload_active = false;
     uint32_t upload_link_ms = 0;
     uint32_t upload_last_try_ms = 0;
+    // PURE WARDRIVER: pause live wardrive stats while home is shown mid-scan.
+    bool suppress_wardrive_stats = false;
     bool hasUploadCredentialsFile();
     bool loadUploadCredentials(String &ssid, String &pass);
     bool loadUploadApiKeys();

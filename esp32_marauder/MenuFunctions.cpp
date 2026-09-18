@@ -421,17 +421,22 @@ void MenuFunctions::main(uint32_t currentTime)
         (wifi_scan_obj.currentScanMode != GPS_TRACKER) &&
         (wifi_scan_obj.currentScanMode != WIFI_SCAN_GPS_NMEA))
     {
-      // PURE WARDRIVER pocket-press guard: a wardrive session is only
-      // stopped via the STOP button (with 5s toggle guard), never by
-      // tapping the screen.
-      if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
+      // PURE WARDRIVER: taps during wardrive toggle stats/home, never stop.
+      // Only the STOP button (5s guard) ends a session.
+      bool wardrive_active =
+          (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
           (wifi_scan_obj.currentScanMode == WIFI_SCAN_STATION_WAR_DRIVE) ||
           (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE) ||
-          (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT)) {
+          (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT);
+      if (wardrive_active && !this->show_home_during_scan) {
+        this->show_home_during_scan = true;
+        wifi_scan_obj.suppress_wardrive_stats = true;
+        this->changeMenu(&mainMenu, true);
         x = -1;
         y = -1;
         return;
       }
+      if (!wardrive_active) {
       // Stop the current scan
       if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_SAE_COMMIT) ||
           (wifi_scan_obj.currentScanMode == WIFI_SCAN_DETECT_FOLLOW) ||
@@ -509,6 +514,7 @@ void MenuFunctions::main(uint32_t currentTime)
       y = -1;
   
       return;
+      } // end if (!wardrive_active)
     }
   #endif
 
@@ -533,14 +539,20 @@ void MenuFunctions::main(uint32_t currentTime)
           (wifi_scan_obj.currentScanMode != GPS_TRACKER) &&
           (wifi_scan_obj.currentScanMode != WIFI_SCAN_GPS_NMEA))
       {
-        // PURE WARDRIVER pocket-press guard (button boards): a wardrive
-        // session is only stopped via the STOP button, never by a keypress.
-        if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
+        // PURE WARDRIVER pocket-press guard (button boards): keypresses
+        // during wardrive toggle stats/home, never stop the session.
+        bool wardrive_active_btn =
+            (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ||
             (wifi_scan_obj.currentScanMode == WIFI_SCAN_STATION_WAR_DRIVE) ||
             (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE) ||
-            (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT)) {
+            (wifi_scan_obj.currentScanMode == BT_SCAN_WAR_DRIVE_CONT);
+        if (wardrive_active_btn && !this->show_home_during_scan) {
+          this->show_home_during_scan = true;
+          wifi_scan_obj.suppress_wardrive_stats = true;
+          this->changeMenu(&mainMenu, true);
           return;
         }
+        if (!wardrive_active_btn) {
         // Stop the current scan
         if ((wifi_scan_obj.currentScanMode == WIFI_SCAN_PROBE) ||
             (wifi_scan_obj.currentScanMode == WIFI_SCAN_SAE_COMMIT) ||
@@ -635,6 +647,7 @@ void MenuFunctions::main(uint32_t currentTime)
         y = -1;
     
         return;
+        } // end if (!wardrive_active_btn)
       }
     #endif
 
@@ -1208,6 +1221,11 @@ void MenuFunctions::battery2(bool initial)
 
 void MenuFunctions::updateStatusBar()
 {
+  // PURE WARDRIVER: home draws its own status row.
+  #ifdef HAS_FULL_SCREEN
+    if (current_menu == &mainMenu)
+      return;
+  #endif
   display_obj.tft.setTextSize(1);
 
   bool status_changed = false;
@@ -1740,6 +1758,8 @@ bool MenuFunctions::isKeyPressed(char c)
         return;
       }
       this->last_scan_toggle_ms = now;
+      this->show_home_during_scan = false;
+      wifi_scan_obj.suppress_wardrive_stats = false;
       if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
         wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
         display_obj.clearScreen();
@@ -1814,6 +1834,16 @@ bool MenuFunctions::isKeyPressed(char c)
     display_obj.tft.setTextWrap(true);
     display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
     display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    // PURE WARDRIVER: never disturb a running wardrive session.
+    if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
+      display_obj.tft.println("Stop scan first.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      delay(2000);
+      this->changeMenu(&fileActionMenu, true);
+      return;
+    }
 
     // PURE WARDRIVER: existing link first, then SD file creds, then SavedWiFi.
     if (!wifi_scan_obj.wifi_connected) {
@@ -5302,8 +5332,12 @@ void MenuFunctions::displayHomeMenu() {
     #ifdef HAS_SD
       String sdLine = "SD ";
       if (sd_obj.supported) {
-        String fn = buffer_obj.getFileName();
-        sdLine += (fn.length() > 0) ? fn.substring(0, 18) : "ready";
+        if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
+          String fn = buffer_obj.getFileName();
+          sdLine += (fn.length() > 0) ? fn.substring(0, 18) : "recording";
+        } else {
+          sdLine += "ready";
+        }
       } else {
         sdLine += "no card";
       }
@@ -5315,23 +5349,23 @@ void MenuFunctions::displayHomeMenu() {
     // Three big buttons along the bottom
     const uint16_t btn_y[3] = {186, 232, 278};
     const uint16_t btn_h = 40;
-    const char* labels[3] = {"SCAN", "SYNC", "MENU"};
     for (uint8_t i = 0; i < 3 && i < current_menu->list->size(); i++) {
       char buf[32];
       current_menu->list->get(i).name.toCharArray(buf, sizeof(buf));
       bool sel = (current_menu->selected == i);
+      // Explicit colors (no inversion): selected = cyan fill/navy text,
+      // otherwise navy fill/white text with cyan outline.
       display_obj.key[i].initButton(&display_obj.tft,
                                     SCREEN_WIDTH / 2,
                                     btn_y[i] + btn_h / 2,
                                     SCREEN_WIDTH - 16,
                                     btn_h,
+                                    sel ? TFT_WHITE : TFT_CYAN,
                                     sel ? TFT_CYAN : TFT_NAVY,
-                                    sel ? TFT_NAVY : TFT_CYAN,
-                                    TFT_CYAN,
+                                    sel ? TFT_NAVY : TFT_WHITE,
                                     buf,
                                     2);
-      display_obj.key[i].drawButton(sel, buf);
-      (void)labels;
+      display_obj.key[i].drawButton(false, buf);
     }
     display_obj.tft.setTextSize(1);
   #endif

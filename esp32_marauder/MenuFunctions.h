@@ -301,6 +301,9 @@ class MenuFunctions
     void RunSetup();
     void orientDisplay();
     void showBootChecklist();
+    // PURE WARDRIVER: true while home is shown during a running wardrive
+    // (taps toggle stats/home, only STOP ends the session).
+    bool show_home_during_scan = false;
 };
 
 
