@@ -8,9 +8,10 @@ param(
   [string]$InFile = "pictures/pure-wardriver-logo.png",
   [string]$Output = "esp32_marauder/PureWardriverBg.h",
   [string]$Preview = "",
-  [double]$Dim = 0.4,
+  [double]$Dim = 0.55,
   [int]$Width = 240,
-  [int]$Height = 320
+  [int]$Height = 320,
+  [switch]$Gray
 )
 
 Add-Type -AssemblyName System.Drawing
@@ -33,10 +34,16 @@ for ($py = 0; $py -lt $Height; $py++) {
   $line = @()
   for ($px = 0; $px -lt $Width; $px++) {
     $c = $small.GetPixel($px, $py)
+    if ($Gray) {
+      $gl = 0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B
+      $cr = $gl; $cg = $gl; $cb = $gl
+    } else {
+      $cr = $c.R; $cg = $c.G; $cb = $c.B
+    }
     $d = ($bayer[(($py % 4) * 4) + ($px % 4)] - 8) / 16.0
-    $r = &$clamp ([math]::Round($c.R * $Dim + $d))
-    $gg = &$clamp ([math]::Round($c.G * $Dim + $d))
-    $b = &$clamp ([math]::Round($c.B * $Dim + $d))
+    $r = &$clamp ([math]::Round($cr * $Dim + $d))
+    $gg = &$clamp ([math]::Round($cg * $Dim + $d))
+    $b = &$clamp ([math]::Round($cb * $Dim + $d))
     $r5 = $r -shr 3
     $g6 = $gg -shr 2
     $b5 = $b -shr 3
@@ -55,10 +62,16 @@ if ($Preview -ne "") {
   for ($py = 0; $py -lt $Height; $py++) {
     for ($px = 0; $px -lt $Width; $px++) {
       $c = $small.GetPixel($px, $py)
+      if ($Gray) {
+        $gl2 = 0.299 * $c.R + 0.587 * $c.G + 0.114 * $c.B
+        $rv = $gl2; $gv = $gl2; $bv = $gl2
+      } else {
+        $rv = $c.R; $gv = $c.G; $bv = $c.B
+      }
       $prev.SetPixel($px, $py, [System.Drawing.Color]::FromArgb(
-        [math]::Max(0, [math]::Min(255, [int]($c.R * $Dim))),
-        [math]::Max(0, [math]::Min(255, [int]($c.G * $Dim))),
-        [math]::Max(0, [math]::Min(255, [int]($c.B * $Dim)))))
+        [math]::Max(0, [math]::Min(255, [int]($rv * $Dim))),
+        [math]::Max(0, [math]::Min(255, [int]($gv * $Dim))),
+        [math]::Max(0, [math]::Min(255, [int]($bv * $Dim)))))
     }
   }
   $prev.Save($Preview)
