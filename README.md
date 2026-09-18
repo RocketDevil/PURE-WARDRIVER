@@ -52,8 +52,10 @@ Feedback welcome!
 
 ## Flashing
 
-Use a release `.bin` (or build it yourself, see below) and flash it with
-`C5_Py_Flasher_for_v8/c5_flasher.py` or `esptool.py`
+Easiest: [=> WEB FLASHER <=](https://thelastoutpostworkshop.github.io/ESPConnect/)
+with `firmware/Pure-Wardrive-V8.bin` (offset `0x0`).
+
+Alternatively use `C5_Py_Flasher_for_v8/c5_flasher.py` or `esptool.py`
 (ESP32-C5, 8 MB flash, `default_8MB` partition scheme).
 
 ## Building (V8)
