@@ -61,6 +61,66 @@ static bool writeSettingsDocument(DynamicJsonDocument& json, String& cache) {
 }
 
 // ---------------------------------------------------------------------------
+// PURE WARDRIVER: at-rest secret obfuscation (see settings.h).
+// ---------------------------------------------------------------------------
+#define PW_SECRET_PREFIX "PW$"
+static const char PW_OBF_SALT[] = "PureWardriver-v1";
+
+bool Settings::_isSecretKey(const char* key) {
+  return strcmp(key, "ClientPW") == 0 ||
+         strcmp(key, "wu") == 0 ||
+         strcmp(key, "wt") == 0 ||
+         strcmp(key, WDG_KEY_NAME) == 0;
+}
+
+static uint8_t _pwKeyByte(size_t pos) {
+  static uint64_t mac = 0;
+  static bool macInit = false;
+  if (!macInit) {
+    mac = ESP.getEfuseMac();
+    macInit = true;
+  }
+  const size_t saltLen = sizeof(PW_OBF_SALT) - 1;
+  return ((uint8_t*)&mac)[pos % 8] ^ (uint8_t)PW_OBF_SALT[pos % saltLen] ^ (uint8_t)(pos * 31);
+}
+
+String Settings::_obfuscateSecret(const String& plain) {
+  const size_t n = plain.length();
+  if (n == 0) return "";
+  static const char HEXCHARS[] = "0123456789ABCDEF";
+  String out;
+  out.reserve(strlen(PW_SECRET_PREFIX) + n * 2);
+  out += PW_SECRET_PREFIX;
+  for (size_t i = 0; i < n; i++) {
+    uint8_t c = ((const uint8_t*)plain.c_str())[i] ^ _pwKeyByte(i);
+    out += HEXCHARS[c >> 4];
+    out += HEXCHARS[c & 0x0F];
+  }
+  return out;
+}
+
+static uint8_t _pwHexVal(char c) {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  return 0;
+}
+
+String Settings::_deobfuscateSecret(const String& stored) {
+  if (!stored.startsWith(PW_SECRET_PREFIX)) return stored;  // legacy plaintext
+  String hex = stored.substring(strlen(PW_SECRET_PREFIX));
+  if (hex.length() == 0 || (hex.length() & 1)) return "";
+  const size_t n = hex.length() / 2;
+  String out;
+  out.reserve(n + 1);
+  for (size_t i = 0; i < n; i++) {
+    uint8_t c = (_pwHexVal(hex.charAt(i * 2)) << 4) | _pwHexVal(hex.charAt(i * 2 + 1));
+    out += (char)(c ^ _pwKeyByte(i));
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // _buildCache — called once after json_settings_string is loaded/updated.
 // Parses the JSON exactly once and fills every field of _cache.
 // All loadSetting<T>() reads hit the cache; no heap is allocated on read.
@@ -72,6 +132,19 @@ void Settings::_buildCache() {
     Serial.println(F("_buildCache: could not parse json"));
     return;
   }
+
+  // One-shot migration: plaintext secrets from older builds are re-stored
+  // obfuscated. Runs once (afterwards everything carries the PW$ prefix).
+  bool migrateSecrets = false;
+  auto loadSecret = [&](const char* name, int i, String& cacheField) {
+    String stored = json["Settings"][i]["value"].as<String>();
+    if (stored.length() > 0 && !stored.startsWith(PW_SECRET_PREFIX)) {
+      json["Settings"][i]["value"] = _obfuscateSecret(stored);
+      migrateSecrets = true;
+    }
+    cacheField = _deobfuscateSecret(stored);
+    (void)name;
+  };
 
   for (int i = 0; i < (int)json["Settings"].size(); i++) {
     const char* name = json["Settings"][i]["name"] | "";
@@ -91,13 +164,18 @@ void Settings::_buildCache() {
     else if (strcmp(name, "ClientSSID") == 0)
       _cache.ClientSSID = json["Settings"][i]["value"].as<String>();
     else if (strcmp(name, "ClientPW") == 0)
-      _cache.ClientPW = json["Settings"][i]["value"].as<String>();
+      loadSecret(name, i, _cache.ClientPW);
     else if (strcmp(name, "wu") == 0)
-      _cache.wu = json["Settings"][i]["value"].as<String>();
+      loadSecret(name, i, _cache.wu);
     else if (strcmp(name, "wt") == 0)
-      _cache.wt = json["Settings"][i]["value"].as<String>();
+      loadSecret(name, i, _cache.wt);
     else if (strcmp(name, WDG_KEY_NAME) == 0)
-      _cache.wdg_key = json["Settings"][i]["value"].as<String>();
+      loadSecret(name, i, _cache.wdg_key);
+  }
+
+  if (migrateSecrets) {
+    if (writeSettingsDocument(json, this->json_settings_string))
+      Serial.println(F("[SETTINGS] Plaintext secrets migrated to obfuscated storage"));
   }
 }
 
@@ -398,7 +476,11 @@ template <> bool Settings::saveSetting<bool>(const char* key, String value) {
     const char* setting_name = json["Settings"][i]["name"] | "";
 
     if (strcmp(setting_name, key) == 0) {
-      json["Settings"][i]["value"] = value;
+      // Secrets rest obfuscated in SPIFFS; the cache keeps plaintext.
+      if (_isSecretKey(key))
+        json["Settings"][i]["value"] = _obfuscateSecret(value);
+      else
+        json["Settings"][i]["value"] = value;
 
       File settingsFile = SPIFFS.open("/settings.json", FILE_WRITE);
 
@@ -413,7 +495,8 @@ template <> bool Settings::saveSetting<bool>(const char* key, String value) {
 
       this->json_settings_string = settings_string;
 
-      // Keep the cache in sync for String fields.
+      // Keep the cache in sync for String fields (plaintext — SPIFFS holds
+      // the obfuscated form, see above).
       if (strcmp(key, "ClientSSID") == 0)
         _cache.ClientSSID = value;
       else if (strcmp(key, "ClientPW") == 0)
@@ -673,7 +756,7 @@ bool Settings::loadSavedWifiCredential(uint8_t index, String& ssid, String& pass
   if (setting.isNull() || index >= profiles.size())
     return false;
   ssid = profiles[index]["ssid"].as<String>();
-  password = profiles[index]["password"].as<String>();
+  password = _deobfuscateSecret(profiles[index]["password"].as<String>());
   return ssid.length() > 0;
 }
 
@@ -718,7 +801,7 @@ WifiCredentialSaveResult Settings::saveWifiCredential(const String& ssid, const 
     profiles[i]["password"] = profiles[i - 1]["password"].as<String>();
   }
   profiles[0]["ssid"] = ssid;
-  profiles[0]["password"] = password;
+  profiles[0]["password"] = _obfuscateSecret(password);
 
   File settings_file = SPIFFS.open("/settings.json", FILE_WRITE);
   if (!settings_file)

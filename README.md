@@ -35,8 +35,11 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
    `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
    (each file holds just the key, nothing else).
    Untouched `YOUR_...` placeholders are ignored by the firmware.
-2. Power on: the firmware loads the API keys and connects to your WiFi
-   right away to verify the link. If no upload starts within 5 minutes,
+2. Power on: the firmware imports the API keys and WiFi credentials into
+   obfuscated internal storage (device-bound, no plaintext on flash) and
+   **deletes the SD copies** — the card only carries them once.
+   It then connects to your WiFi right away to verify the link.
+   If no upload starts within 5 minutes,
    WiFi switches off again to save battery — opening SYNC reconnects.
 3. Wait for GPS fix.
 4. Press **SCAN** to start logging (`/wardrive_N.log` on SD).

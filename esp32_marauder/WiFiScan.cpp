@@ -11687,6 +11687,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
         Serial.println(F("[UPLOAD] No /API.txt on SD, trying single key files"));
       }
       else {
+        bool apiUsed = false;
         while (f.available()) {
           String line = f.readStringUntil('\n');
           line.trim();
@@ -11702,18 +11703,31 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
           if (key == "wdg_key") skey = WDG_KEY_NAME;
           else if (key == "wu" || key == "wigle_user") skey = "wu";
           else if (key == "wt" || key == "wigle_token") skey = "wt";
-          if (skey != nullptr && applyUploadApiKey(skey, val))
+          if (skey != nullptr && applyUploadApiKey(skey, val)) {
             any = true;
+            apiUsed = true;
+          }
         }
         f.close();
+        // Imported keys now rest obfuscated in SPIFFS — drop the plaintext copy.
+        if (apiUsed) {
+          sd_obj.removeFile(UPLOAD_API_FILE);
+          Serial.println(F("[UPLOAD] /API.txt imported, removed from SD"));
+        }
       }
-      // Single-value fallback files (kept on SD, re-read every boot).
-      if (applyUploadApiKey(WDG_KEY_NAME, readUploadKeyFile("/wdg_key.txt")))
+      // Single-value fallback files (one-shot: imported, then removed).
+      if (applyUploadApiKey(WDG_KEY_NAME, readUploadKeyFile("/wdg_key.txt"))) {
         any = true;
-      if (applyUploadApiKey("wu", readUploadKeyFile("/wigle_api_name.txt")))
+        sd_obj.removeFile("/wdg_key.txt");
+      }
+      if (applyUploadApiKey("wu", readUploadKeyFile("/wigle_api_name.txt"))) {
         any = true;
-      if (applyUploadApiKey("wt", readUploadKeyFile("/wigle_api_token.txt")))
+        sd_obj.removeFile("/wigle_api_name.txt");
+      }
+      if (applyUploadApiKey("wt", readUploadKeyFile("/wigle_api_token.txt"))) {
         any = true;
+        sd_obj.removeFile("/wigle_api_token.txt");
+      }
       return any;
     #else
       return false;
@@ -11732,14 +11746,26 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     this->upload_last_try_ms = millis();
     String ssid, pass;
     if (!this->loadUploadCredentials(ssid, pass)) {
+      // No SD master (already imported)? Fall back to obfuscated SPIFFS profiles.
+      if (settings_obj.getSavedWifiCount() > 0 && this->joinSavedWiFi(false)) {
+        this->upload_wifi_auto = true;
+        this->upload_link_ms = millis();
+        Serial.println(F("[UPLOAD] Upload WiFi ready (saved)"));
+        return true;
+      }
       Serial.println(F("[UPLOAD] No upload WiFi credentials on SD"));
       return false;
     }
     Serial.println(String("[UPLOAD] Auto-connecting to ") + ssid);
-    // gui=false: serial dots only; save_credential=false: SD file stays master.
-    if (this->joinWiFi(ssid, pass, false, false)) {
+    // gui=false: serial dots only; save_credential=true: import into
+    // obfuscated SPIFFS so the SD plaintext copy can be removed.
+    if (this->joinWiFi(ssid, pass, false, true)) {
       this->upload_wifi_auto = true;
       this->upload_link_ms = millis();
+      #ifdef HAS_SD
+        sd_obj.removeFile(UPLOAD_WIFI_FILE);
+        Serial.println(F("[UPLOAD] Credentials imported, removed from SD"));
+      #endif
       Serial.println(F("[UPLOAD] Upload WiFi ready"));
       return true;
     }

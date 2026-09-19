@@ -62,6 +62,15 @@ class Settings {
 
     void _buildCache();  // parse json_settings_string -> _cache
 
+    // PURE WARDRIVER: at-rest obfuscation for secrets (WiFi passwords,
+    // upload tokens). XOR with a device-bound keystream (eFuse MAC + salt),
+    // hex-encoded with "PW$" prefix. This is obfuscation, NOT encryption —
+    // it keeps casual SPIFFS dumps from leaking keys in plaintext.
+    // Values without the prefix are treated as legacy plaintext.
+    static bool _isSecretKey(const char* key);
+    static String _obfuscateSecret(const String& plain);
+    static String _deobfuscateSecret(const String& stored);
+
   public:
     bool begin();
 
