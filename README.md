@@ -1,5 +1,7 @@
 # PURE WARDRIVER
 
+![visitors](https://visitor-badge.laobi.icu/badge?page_id=RocketDevil.PURE-WARDRIVER)
+
 <p align="center"><img alt="PURE WARDRIVER logo" src="pictures/pure-wardriver-logo.png" width="300"></p>
 <p align="center">
   <b>Pure wardriving firmware for the ESP32 Marauder V8 — no pentest tools, just wardriving.</b>
