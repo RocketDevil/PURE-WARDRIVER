@@ -6826,8 +6826,11 @@ void WiFiScan::throwThatShitInACircle() {
   #endif
 
   esp_wifi_get_config((wifi_interface_t)WIFI_IF_AP, &conf);
-  conf.ap.ssid[0] = '\0';
-  conf.ap.ssid_len = 0;
+  // PURE WARDRIVER: empty SSID (ssid_len=0) is rejected by the C5 WiFi driver
+  // (err 0x3005). A 1-char hidden SSID keeps the AP invisible just as well.
+  memset(conf.ap.ssid, 0, sizeof(conf.ap.ssid));
+  conf.ap.ssid[0] = ' ';
+  conf.ap.ssid_len = 1;
   conf.ap.channel = this->set_channel;
   conf.ap.ssid_hidden = 1;
   conf.ap.max_connection = 0;
@@ -6836,7 +6839,7 @@ void WiFiScan::throwThatShitInACircle() {
   err = esp_wifi_set_config((wifi_interface_t)WIFI_IF_AP, &conf);
   if (err != 0)
   {
-    Serial.print(F("AP config set error, Maurauder SSID might visible : err=0x"));
+    Serial.print(F("AP hide-SSID config failed, err=0x"));
     Serial.println(err, HEX);
   }
 }
