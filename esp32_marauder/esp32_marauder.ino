@@ -249,7 +249,10 @@ void setup()
     digitalWrite(ACT_LED_PIN, LOW);
   #endif
 
-  while(!Serial)
+  // PURE WARDRIVER: bounded wait — on native-USB targets (S3) Serial stays
+  // false until a host opens the CDC port; never block boot on a monitor.
+  uint32_t serial_wait_start = millis();
+  while (!Serial && (millis() - serial_wait_start < 2000))
     delay(10);
 
   #ifdef HAS_C5_SD
