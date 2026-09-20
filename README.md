@@ -94,6 +94,13 @@ Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11):
 ```
 
 
+## Planned
+
+- M5Launcher-slot flavor (running-partition detection is in; execution
+  from launcher OTA slots is not supported yet — flash standalone @`0x0`)
+- Own SD folder structure (`/PURE_WARDRIVER/`) for launcher users
+
+
 ## Attribution / License
 
 Based on [ESP32Marauder](https://github.com/justcallmekoko/ESP32Marauder)

@@ -13,6 +13,7 @@ https://www.online-utility.org/image/convert/to/XBM
 #endif
 
 #include <stdio.h>
+#include "esp_ota_ops.h"  // PURE WARDRIVER: running-partition detection
 
 #ifdef HAS_GPS
   #include "GpsInterface.h"
@@ -254,6 +255,19 @@ void setup()
   uint32_t serial_wait_start = millis();
   while (!Serial && (millis() - serial_wait_start < 2000))
     delay(10);
+
+  // PURE WARDRIVER: report where we boot from. Standalone 0x0 flashes run
+  // the factory app @0x10000; anything else is a firmware-launcher slot,
+  // which is detected here but NOT supported yet (see README "Planned").
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  if (running != nullptr) {
+    Serial.print(F("[BOOT] Partition '"));
+    Serial.print(running->label);
+    Serial.print(F("' @ 0x"));
+    Serial.println(running->address, HEX);
+    if (running->address != 0x10000)
+      Serial.println(F("[BOOT] WARNING: launcher-slot boot is not supported, flash standalone @0x0"));
+  }
 
   #ifdef HAS_C5_SD
     sharedSPI.begin(SD_SCK, SD_MISO, SD_MOSI);
