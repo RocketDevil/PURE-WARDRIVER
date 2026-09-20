@@ -104,7 +104,7 @@ Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11):
 ## Attribution / License
 
 Based on [ESP32Marauder](https://github.com/justcallmekoko/ESP32Marauder)
-by Just Call Me Koko, MIT licensed. This project keeps the original
+by JustCallMeKoko, MIT licensed. This project keeps the original
 `LICENSE` (MIT) and copyright notice. All pentest/attack modules were
 removed; wardrive, GPS, SD, display and upload code paths are retained
 from upstream.
