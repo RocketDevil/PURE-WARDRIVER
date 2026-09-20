@@ -1767,7 +1767,7 @@ bool MenuFunctions::isKeyPressed(char c)
       } else {
         display_obj.clearScreen();
         this->drawStatusBar();
-        wifi_scan_obj.StartScan(WIFI_SCAN_WAR_DRIVE, TFT_GREEN);
+          wifi_scan_obj.StartScan(WIFI_SCAN_WAR_DRIVE, TFT_BLUE);
         return;
       }
       this->buildHomeMenu();
@@ -2556,7 +2556,7 @@ void MenuFunctions::RunSetup()
       this->addNodes(&wifiSnifferMenu, "Wardrive", TFTGREEN, BEACON_SNIFF, [this]() {
         display_obj.clearScreen();
         this->drawStatusBar();
-        wifi_scan_obj.StartScan(WIFI_SCAN_WAR_DRIVE, TFT_GREEN);
+          wifi_scan_obj.StartScan(WIFI_SCAN_WAR_DRIVE, TFT_BLUE);
       });
     }
   #endif

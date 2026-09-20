@@ -4483,9 +4483,9 @@ bool WiFiScan::RunGPSInfo(bool tracker, bool display, bool poi) {
 
           if (compact) {
             display_obj.tft.setCursor(0, content_top + 6);
-            display_obj.tft.setTextColor(gps_obj.getFixStatus() ? TFT_GREEN : TFT_RED);
+            display_obj.tft.setTextColor(gps_obj.getFixStatus() ? TFT_WHITE : TFT_RED);
             display_obj.tft.print(gps_obj.getFixStatus() ? F("FIX") : F("NO FIX"));
-            display_obj.tft.setTextColor(TFT_CYAN);
+            display_obj.tft.setTextColor(TFT_WHITE);
             display_obj.tft.println("  SAT " + gps_obj.getNumSatsString() + "  " + elapsed_text);
             display_obj.tft.println("DIST " + distance_text);
             display_obj.tft.println("LAT  " + gps_obj.getLat());
@@ -4499,10 +4499,10 @@ bool WiFiScan::RunGPSInfo(bool tracker, bool display, bool poi) {
           else {
             int16_t y = content_top + 10;
             display_obj.tft.setCursor(8, y);
-            display_obj.tft.setTextColor(gps_obj.getFixStatus() ? TFT_GREEN : TFT_RED);
+            display_obj.tft.setTextColor(gps_obj.getFixStatus() ? TFT_WHITE : TFT_RED);
             display_obj.tft.setTextSize(expanded ? 2 : 1);
             display_obj.tft.print(gps_obj.getFixStatus() ? F("GPS FIX") : F("NO GPS FIX"));
-            display_obj.tft.setTextColor(TFT_CYAN);
+            display_obj.tft.setTextColor(TFT_WHITE);
             display_obj.tft.setTextSize(1);
             display_obj.tft.setCursor(SCREEN_WIDTH - 72, y + 3);
             display_obj.tft.print("SATS " + gps_obj.getNumSatsString());
@@ -4532,7 +4532,7 @@ bool WiFiScan::RunGPSInfo(bool tracker, bool display, bool poi) {
               display_obj.tft.setCursor(8, y + 72);
               display_obj.tft.println("UTC " + gps_obj.getDatetime());
               display_obj.tft.setCursor(8, y + 88);
-              display_obj.tft.setTextColor(TFT_GREEN);
+              display_obj.tft.setTextColor(TFT_WHITE);
               display_obj.tft.println(F("GPX LOGGING ACTIVE"));
             }
           }
@@ -6329,14 +6329,14 @@ void WiFiScan::renderWardriveGeofenceState() {
   #ifdef HAS_SCREEN
     // Rebuild the normal wardrive chrome on both entry and exit so no font,
     // text-size, or stale pixels leak between the overlay and scan UI.
-    this->setupScanDisplayArea(TFT_WHITE, TFT_GREEN);
+    this->setupScanDisplayArea(TFT_WHITE, TFT_BLUE);
     #ifdef HAS_FULL_SCREEN
-      display_obj.tft.fillRect(0, 16, TFT_WIDTH, 16, TFT_GREEN);
+      display_obj.tft.fillRect(0, 16, TFT_WIDTH, 16, TFT_BLUE);
       display_obj.tft.drawCentreString("Wardrive", TFT_WIDTH / 2, 16, 2);
     #endif
     display_obj.tft.setFreeFont(NULL);
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_GREEN, TFT_BLACK);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_BLACK);
     this->drawWardriveGeofenceBadge();
   #endif
 }
@@ -6358,10 +6358,10 @@ void WiFiScan::drawWardriveGeofenceBadge() {
     while (label.length() > 1 && display_obj.tft.textWidth(label) > SCREEN_WIDTH - 6)
       label.remove(label.length() - 1);
 
-    const uint16_t color = this->geofence_paused ? TFT_RED : TFT_GREEN;
+    const uint16_t frame = this->geofence_paused ? TFT_RED : TFT_BLUE;
     display_obj.tft.fillRect(0, badge_y, SCREEN_WIDTH, badge_height, TFT_BLACK);
-    display_obj.tft.drawRect(0, badge_y, SCREEN_WIDTH, badge_height, color);
-    display_obj.tft.setTextColor(color, TFT_BLACK);
+    display_obj.tft.drawRect(0, badge_y, SCREEN_WIDTH, badge_height, frame);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_BLACK);
     display_obj.tft.setCursor(3, badge_y + 2);
     display_obj.tft.print(label);
   #endif
@@ -6581,21 +6581,21 @@ void WiFiScan::displayWardriveStats() {
 
       #ifndef HAS_MINI_SCREEN
         display_obj.tft.setTextSize(3);
-        display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("WiFi: " + (String)this->beacon_frames);
-        display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("BT: " + (String)this->bt_frames);
         display_obj.tft.setTextSize(2);
-        display_obj.tft.setTextColor(TFT_RED, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("Flock: " + (String)this->flock_devices + "\n");
       #else
         display_obj.tft.setTextSize(2);
-        display_obj.tft.setTextColor(TFT_GREEN, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("WiFi:" + (String)this->beacon_frames);
-        display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("BT:" + (String)this->bt_frames);
         display_obj.tft.setTextSize(1);
-        display_obj.tft.setTextColor(TFT_RED, TFT_NAVY);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
         display_obj.tft.println("Flock: " + (String)this->flock_devices + "\n");
       #endif
       
@@ -6618,7 +6618,7 @@ void WiFiScan::displayWardriveStats() {
 
       // PURE WARDRIVER: POI bar removed (tap never stops, see home screen).
       display_obj.tft.setTextSize(1);
-      display_obj.tft.setTextColor(TFT_CYAN, TFT_NAVY);
+      display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
       display_obj.tft.drawCentreString("TAP for MENU", SCREEN_WIDTH / 2, SCREEN_HEIGHT - 20, 1);
 
       this->drawWardriveGeofenceBadge();
@@ -6664,7 +6664,7 @@ void WiFiScan::RunBeaconScan(uint8_t scan_mode, uint16_t color) {
           display_obj.touchToExit();
       #endif
     #endif
-    display_obj.tft.setTextColor(TFT_GREEN, TFT_BLACK);
+    display_obj.tft.setTextColor(TFT_WHITE, TFT_BLACK);
     if (scan_mode != WIFI_SCAN_WAR_DRIVE) {
       display_obj.tftDrawChannelScaleButtons(set_channel, false);
       display_obj.tftDrawExitScaleButtons(false);
