@@ -6273,6 +6273,22 @@ void WiFiScan::executeWarDrive() {
         uint8_t scan_channel = wardrive_channels[this->wardrive_channel_index];
         this->wardrive_channel_index++;
 
+        // PURE WARDRIVER: keep the status-bar channel live during wardrive
+        // (it otherwise freezes on the configured channel).
+        #ifdef HAS_SCREEN
+          if (scan_channel != this->old_channel) {
+            this->old_channel = scan_channel;
+            #ifdef HAS_FULL_SCREEN
+              display_obj.tft.fillRect(50, 0, (CHAR_WIDTH / 2) * 8, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
+              display_obj.tft.drawString("CH: " + (String)scan_channel, 50, 0, 2);
+            #endif
+            #ifdef HAS_MINI_SCREEN
+              display_obj.tft.fillRect(TFT_WIDTH/4, 0, CHAR_WIDTH * 6, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
+              display_obj.tft.drawString("CH:" + (String)scan_channel, TFT_WIDTH/4, 0, 1);
+            #endif
+          }
+        #endif
+
         #ifdef HAS_DUAL_BAND
           WiFi.scanNetworks(true, true, false, 80, scan_channel);
         #else
