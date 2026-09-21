@@ -334,6 +334,21 @@ void MenuFunctions::main(uint32_t currentTime)
 
   this->updateMenuMarquee(currentTime);
 
+  // PURE WARDRIVER: refresh the home dashboard while a wardrive runs
+  // behind it — counters would otherwise freeze at tap-to-home time.
+  #ifdef HAS_SCREEN
+    if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE &&
+        wifi_scan_obj.suppress_wardrive_stats &&
+        current_menu == &mainMenu) {
+      static uint32_t last_home_refresh = 0;
+      if (currentTime - last_home_refresh >= 3000) {
+        last_home_refresh = currentTime;
+        this->displayHomeMenu();
+        this->displayMenuButtons();
+      }
+    }
+  #endif
+
 
   boolean pressed = false;
   // This is code from bodmer's keypad example
