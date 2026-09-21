@@ -11991,8 +11991,10 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     String respTrunc = response.length() > 200 ? response.substring(0, 200) : response;
     Serial.println("[WDG] Response: " + respTrunc);
 
-    // WDG Wars returns 200 on success
+    // WDG Wars returns 202 on success; 409 means the server already has
+    // this file (duplicate) which is success too, not an error.
     bool ok = response.indexOf("202 Accepted") >= 0 ||
+    response.indexOf("409") >= 0 ||
     response.indexOf("\"ok\":true") >= 0;
     if (!ok) {
       char errorReason[64];
