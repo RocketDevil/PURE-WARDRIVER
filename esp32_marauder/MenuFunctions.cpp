@@ -1911,11 +1911,11 @@ void MenuFunctions::showBootChecklist() {
         display_obj.tft.print(rows[i].extra);
       }
       String state = rows[i].ok ? "OK" : "--";
-      display_obj.tft.setTextColor(rows[i].ok ? TFT_GREEN : TFT_DARKGREY);
+      display_obj.tft.setTextColor(rows[i].ok ? TFT_WHITE : TFT_DARKGREY);
       display_obj.tft.drawString(state, SCREEN_WIDTH - 12 - state.length() * 6, y, 1);
     }
 
-    display_obj.tft.setTextColor(TFT_GREEN);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString(">> WARDRIVER ONLINE", SCREEN_WIDTH / 2, 42 + rowCount * 20 + 8, 1);
     delay(2500);
     this->changeMenu(&mainMenu, true);
@@ -5291,7 +5291,7 @@ void MenuFunctions::displayHomeMenu() {
       String gpsLine = "GPS ";
       if (gps_obj.getGpsModuleStatus()) {
         if (gps_obj.getFixStatus()) {
-          display_obj.tft.setTextColor(TFT_GREEN);
+          display_obj.tft.setTextColor(TFT_WHITE);
           gpsLine += "fix " + (String)gps_obj.getNumSats() + " sat";
         } else {
           display_obj.tft.setTextColor(TFT_YELLOW);
