@@ -22,8 +22,11 @@
 #if defined(MARAUDER_CYD_3_5_INCH) && !defined(ST7796_DRIVER)
   #error "MARAUDER_CYD_3_5_INCH requires User_Setup_cyd_3_5_inch.h (ST7796_DRIVER)"
 #endif
-#if (defined(MARAUDER_CARDPUTER) || defined(MARAUDER_CARDPUTER_ADV)) && !defined(ST7789_2_DRIVER)
-  #error "Cardputer targets require their ST7789_2_DRIVER TFT_eSPI setup"
+#if defined(MARAUDER_CARDPUTER_ADV) && !defined(ST7789_DRIVER) && !defined(ST7789_2_DRIVER)
+  #error "MARAUDER_CARDPUTER_ADV requires its ST7789 TFT_eSPI setup (full driver)"
+#endif
+#if defined(MARAUDER_CARDPUTER) && !defined(ST7789_2_DRIVER)
+  #error "MARAUDER_CARDPUTER requires its ST7789_2_DRIVER TFT_eSPI setup"
 #endif
 
 #ifdef HAS_CYD_TOUCH
