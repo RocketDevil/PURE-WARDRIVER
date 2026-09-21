@@ -6588,6 +6588,7 @@ void WiFiScan::displayWardriveStats() {
                               TFT_WIDTH,
                               TFT_HEIGHT - STATUS_BAR_WIDTH + 1,
                               TFT_NAVY);
+      display_obj.drawSkullWatermark(0x2132);  // dim steel behind stats
 
       #ifndef HAS_MINI_SCREEN
         display_obj.tft.setCursor(0, (STATUS_BAR_WIDTH * 4) + CHAR_WIDTH + EXT_BUTTON_WIDTH);

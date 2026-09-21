@@ -1394,28 +1394,9 @@ void MenuFunctions::updateStatusBar()
     #endif
   }
 
-  // Force PMKID stuff
-  if ((wifi_scan_obj.force_pmkid) || (wifi_scan_obj.ep_deauth)) {
-    #ifdef HAS_FULL_SCREEN
-      display_obj.tft.drawXBitmap(SB_FORCE_X,
-                                  0,
-                                  menu_icons[FORCE],
-                                  16,
-                                  16,
-                                  STATUSBAR_COLOR,
-                                  TFT_GREEN);
-    #endif
-  } else {
-    #ifdef HAS_FULL_SCREEN
-      display_obj.tft.drawXBitmap(SB_FORCE_X,
-                                  0,
-                                  menu_icons[FORCE],
-                                  16,
-                                  16,
-                                  STATUSBAR_COLOR,
-                                  TFT_DARKGREY);
-    #endif
-  }
+  // PURE WARDRIVER: Force-PMKID skull removed (attack switches don't
+  // exist anymore; the skull now lives on as watermark, see
+  // Display::drawSkullWatermark).
 }
 
 void MenuFunctions::drawStatusBar()
@@ -1573,28 +1554,9 @@ void MenuFunctions::drawStatusBar()
     #endif
   }
 
-  // Force PMKID stuff
-  if ((wifi_scan_obj.force_pmkid) || (wifi_scan_obj.ep_deauth)) {
-    #ifdef HAS_FULL_SCREEN
-      display_obj.tft.drawXBitmap(SB_FORCE_X,
-                                  0,
-                                  menu_icons[FORCE],
-                                  16,
-                                  16,
-                                  STATUSBAR_COLOR,
-                                  TFT_GREEN);
-    #endif
-  } else {
-    #ifdef HAS_FULL_SCREEN
-      display_obj.tft.drawXBitmap(SB_FORCE_X,
-                                  0,
-                                  menu_icons[FORCE],
-                                  16,
-                                  16,
-                                  STATUSBAR_COLOR,
-                                  TFT_DARKGREY);
-    #endif
-  }
+  // PURE WARDRIVER: Force-PMKID skull removed (attack switches don't
+  // exist anymore; the skull now lives on as watermark, see
+  // Display::drawSkullWatermark).
 }
 
 void MenuFunctions::orientDisplay() {
@@ -5299,12 +5261,12 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("APs CAPTURED", SCREEN_WIDTH / 2, 20, 1);
     display_obj.tft.setTextSize(3);
-    display_obj.tft.setTextColor(TFT_GREEN);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames, SCREEN_WIDTH / 2, 36, 1);
-    display_obj.tft.setTextColor(TFT_CYAN);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("BLE " + (String)wifi_scan_obj.bt_frames, SCREEN_WIDTH / 2, 66, 1);
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_RED);
+    display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
 
     // GPS / state / SD box

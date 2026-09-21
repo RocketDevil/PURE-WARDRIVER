@@ -156,6 +156,9 @@ class Display
     void clearScreen();
     void displayBuffer(bool do_clear = false);
     void drawBootSplash();
+    // PURE WARDRIVER: dim FORCE-skull watermark (menu_icons[39]), drawn
+    // once behind static screens. Transparent: only set bits are painted.
+    void drawSkullWatermark(uint16_t color);
     void getTouchWhileFunction(bool pressed);
     void init();
     void RunSetup();

@@ -242,6 +242,26 @@ void Display::RunSetup() {
   #endif
 }
 
+void Display::drawSkullWatermark(uint16_t color) {
+  // FORCE icon (menu_icons[39]) is 16x16 XBM, LSB-first, 2 bytes per row.
+  // Scale up and center below the status bar; only set bits are painted.
+  const uint8_t scale =
+    #ifdef HAS_MINI_SCREEN
+      3;
+    #else
+      6;
+    #endif
+  const int16_t size = 16 * scale;
+  const int16_t x0 = (tft.width() - size) / 2;
+  const int16_t y0 = STATUS_BAR_WIDTH + (tft.height() - STATUS_BAR_WIDTH - size) / 2;
+  for (uint8_t y = 0; y < 16; y++) {
+    for (uint8_t x = 0; x < 16; x++) {
+      if (menu_icons[39][y * 2 + x / 8] & (1 << (x % 8)))
+        tft.fillRect(x0 + x * scale, y0 + y * scale, scale, scale, color);
+    }
+  }
+}
+
 void Display::drawBootSplash() {
   const int16_t width = tft.width();
   const int16_t height = tft.height();
@@ -256,6 +276,7 @@ void Display::drawBootSplash() {
   // PURE WARDRIVER branding: plain navy for now (logo background
   // disabled until the new artwork arrives).
   tft.fillScreen(TFT_NAVY);
+  this->drawSkullWatermark(0x2132);  // dim steel on navy (~15% white)
   tft.setTextWrap(false);
   tft.setFreeFont(NULL);
   tft.setTextSize(layout.text_size);
