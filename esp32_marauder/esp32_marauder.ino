@@ -269,6 +269,17 @@ void setup()
       Serial.println(F("[BOOT] WARNING: launcher-slot boot is not supported, flash standalone @0x0"));
   }
 
+  // PURE WARDRIVER CP-ADV debug lifelines (S3-only, V8 untouched):
+  // USBSerial mirrors boot progress to the USB-Serial-JTAG port (the one
+  // ROM logs appear on), and the RGB LED shows setup stages with no
+  // display or serial monitor needed. Red = entered setup,
+  // yellow = display/menu ready, green = setup done.
+  #ifdef MARAUDER_CARDPUTER_ADV
+    USBSerial.begin(115200);
+    USBSerial.println(F("[BOOT] PURE WARDRIVER " PURE_WARDRIVER_VERSION " CP-ADV"));
+    neopixelWrite(21, 24, 0, 0);
+  #endif
+
   #ifdef HAS_C5_SD
     sharedSPI.begin(SD_SCK, SD_MISO, SD_MOSI);
     delay(100);
@@ -433,12 +444,22 @@ void setup()
 
   wifi_scan_obj.StartScan(WIFI_SCAN_OFF);
 
+  #ifdef MARAUDER_CARDPUTER_ADV
+    USBSerial.println(F("[BOOT] display/menu ready"));
+    neopixelWrite(21, 24, 20, 0);
+  #endif
+
   #ifdef HAS_SCREEN
     // PURE WARDRIVER boot checklist, then home menu.
     menu_function_obj.showBootChecklist();
   #endif
-   
+
   cli_obj.RunSetup();
+
+  #ifdef MARAUDER_CARDPUTER_ADV
+    USBSerial.println(F("[BOOT] setup done"));
+    neopixelWrite(21, 0, 24, 0);
+  #endif
 }
 
 
