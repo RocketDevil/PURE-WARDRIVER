@@ -85,12 +85,17 @@ Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 ## Building (M5 Cardputer ADV, <ins> Still Testing this Build atm!!! </ins>)
 
 Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11).
-First copy the sample config and adjust the paths to your machine:
+First copy the sample config and **replace both paths with your own,
+or the build will fail**:
 
 ```powershell
 Copy-Item sketchbooks/CP-ADV/arduino-cli.yaml.sample sketchbooks/CP-ADV/arduino-cli.yaml
-# then edit data:/user: paths inside it
 ```
+
+Inside `arduino-cli.yaml`:
+- `data:` — where the ESP32 core 2.0.11 + libraries get installed
+  (any empty folder, e.g. `C:/pw-env/cpadv-data`)
+- `user:` — this repo's `sketchbooks/CP-ADV` folder (absolute path)
 
 The TFT_eSPI setup for the ADV panel must use the **full** `ST7789_DRIVER`
 (minimal `_2` leaves the panel black), `USE_HSPI_PORT` (SPI3, like M5GFX),
