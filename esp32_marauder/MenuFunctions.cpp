@@ -5279,18 +5279,17 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.drawString(batt, SCREEN_WIDTH - 4 - batt.length() * 6, 4, 1);
     display_obj.tft.drawFastHLine(0, 16, SCREEN_WIDTH, TFT_CYAN);
 
-    // Scan results: WIFI + BLE big, FLOCK small below.
+    // Scan results: big total on top (like the WDGW reference layout),
+    // WIFI/BLE/FLOCK detail row below. All white/blue, red = warnings only.
     display_obj.tft.setTextSize(1);
     display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.drawCentreString("APs CAPTURED", SCREEN_WIDTH / 2, 20, 1);
-    display_obj.tft.setTextSize(3);
+    display_obj.tft.setTextSize(5);
     display_obj.tft.setTextColor(TFT_WHITE);
-    display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames, SCREEN_WIDTH / 2, 36, 1);
-    display_obj.tft.setTextColor(TFT_WHITE);
-    display_obj.tft.drawCentreString("BLE " + (String)wifi_scan_obj.bt_frames, SCREEN_WIDTH / 2, 66, 1);
+    display_obj.tft.drawCentreString(String(wifi_scan_obj.beacon_frames + wifi_scan_obj.bt_frames), SCREEN_WIDTH / 2, 36, 1);
     display_obj.tft.setTextSize(1);
-    display_obj.tft.setTextColor(TFT_WHITE);
-    display_obj.tft.drawCentreString("FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
+    display_obj.tft.setTextColor(TFT_CYAN);
+    display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames + "  BLE " + (String)wifi_scan_obj.bt_frames + "  FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
 
     // GPS / state / SD box
     display_obj.tft.drawRoundRect(8, 128, SCREEN_WIDTH - 16, 54, 4, TFT_CYAN);
@@ -5318,10 +5317,10 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.setTextColor(TFT_WHITE);
     display_obj.tft.setCursor(16, 148);
     display_obj.tft.print(String("STATE ") + (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE ? "SCANNING" : "IDLE"));
-    display_obj.tft.setTextColor(TFT_GREEN);
     display_obj.tft.setCursor(16, 162);
     #ifdef HAS_SD
       String sdLine = "SD ";
+      uint16_t sdColor = TFT_WHITE;
       if (sd_obj.supported) {
         if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
           String fn = buffer_obj.getFileName();
@@ -5331,10 +5330,13 @@ void MenuFunctions::displayHomeMenu() {
         }
       } else {
         sdLine += "no card";
+        sdColor = TFT_RED;
       }
     #else
       String sdLine = "SD --";
+      uint16_t sdColor = TFT_WHITE;
     #endif
+    display_obj.tft.setTextColor(sdColor);
     display_obj.tft.print(sdLine);
 
     // Three big buttons along the bottom
