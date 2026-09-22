@@ -2,7 +2,7 @@
 # Copy to arduino-cli.yaml in THIS directory and adjust the paths:
 #   cp sketchbooks/CP-ADV/arduino-cli.yaml.sample sketchbooks/CP-ADV/arduino-cli.yaml
 directories:
-  data: C:/pw-env/cpadv-data
+  data: C:/path/to/cpadv-data
   user: C:/path/to/PURE-WARDRIVER/sketchbooks/CP-ADV
 board_manager:
   additional_urls:
