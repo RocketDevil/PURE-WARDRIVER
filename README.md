@@ -42,7 +42,7 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
    If no upload starts within 5 minutes,
    WiFi switches off again to save battery — opening SYNC reconnects.
 3. Wait for GPS fix.
-4. Press **SCAN** to start logging (`/wardrive_N.log` on SD).
+4. Press **SCAN** to start logging (`/wardrive_N.csv` on SD, WigleWifi-1.6).
 5. Press **STOP** (5s guard against double-taps) to stop.
 6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
 
