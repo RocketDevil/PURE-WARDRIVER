@@ -281,10 +281,18 @@ void Display::drawBootSplash() {
   tft.setFreeFont(NULL);
   tft.setTextSize(layout.text_size);
   tft.setTextColor(TFT_WHITE);
-  tft.drawCentreString("V8 PURE WARDRIVE", width / 2, layout.title_y, 1);
+  #ifdef MARAUDER_CARDPUTER_ADV
+    tft.drawCentreString("CP-ADV PURE WARDRIVE", width / 2, layout.title_y, 1);
+  #else
+    tft.drawCentreString("V8 PURE WARDRIVE", width / 2, layout.title_y, 1);
+  #endif
   tft.setTextSize(1);
   tft.setTextColor(TFT_CYAN);
-  tft.drawCentreString("ESP32-C5", width / 2, layout.title_y + 18, 1);
+  #ifdef MARAUDER_CARDPUTER_ADV
+    tft.drawCentreString("ESP32-S3", width / 2, layout.title_y + 18, 1);
+  #else
+    tft.drawCentreString("ESP32-C5", width / 2, layout.title_y + 18, 1);
+  #endif
 
   // PURE WARDRIVER logo artwork is the background (see above).
 

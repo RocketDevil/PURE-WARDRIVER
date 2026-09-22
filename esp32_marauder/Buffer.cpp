@@ -18,7 +18,8 @@ void Buffer::createFile(const char* name, bool is_pcap, bool is_gpx){
   }
   else if ((!is_pcap) && (!is_gpx)) {
     do{
-      fileName = prefix+String(name)+"_"+(String)i+".log";
+      // PURE WARDRIVER: .csv — accepted by every upload portal (.log is not).
+      fileName = prefix+String(name)+"_"+(String)i+".csv";
       i++;
     } while(fs->exists(fileName));
   }

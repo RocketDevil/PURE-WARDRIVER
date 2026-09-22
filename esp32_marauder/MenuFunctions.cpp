@@ -1858,9 +1858,17 @@ void MenuFunctions::showBootChecklist() {
     display_obj.tft.setFreeFont(NULL);
     display_obj.tft.setTextSize(1);
     display_obj.tft.setTextColor(TFT_CYAN);
-    display_obj.tft.drawCentreString("V8 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
+    #ifdef MARAUDER_CARDPUTER_ADV
+      display_obj.tft.drawCentreString("CP-ADV PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
+    #else
+      display_obj.tft.drawCentreString("V8 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
+    #endif
     display_obj.tft.setTextColor(TFT_WHITE);
-    display_obj.tft.drawCentreString("ESP32-C5", SCREEN_WIDTH / 2, 20, 1);
+    #ifdef MARAUDER_CARDPUTER_ADV
+      display_obj.tft.drawCentreString("ESP32-S3", SCREEN_WIDTH / 2, 20, 1);
+    #else
+      display_obj.tft.drawCentreString("ESP32-C5", SCREEN_WIDTH / 2, 20, 1);
+    #endif
     display_obj.tft.drawFastHLine(0, 32, SCREEN_WIDTH, TFT_CYAN);
 
     struct BootCheckRow { const char* label; bool ok; String extra; };
