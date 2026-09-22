@@ -94,7 +94,7 @@ Copy-Item sketchbooks/CP-ADV/arduino-cli.yaml.sample sketchbooks/CP-ADV/arduino-
 
 Inside `arduino-cli.yaml`:
 - `data:` — where the ESP32 core 2.0.11 + libraries get installed
-  (any empty folder, e.g. `C:/pw-env/cpadv-data`)
+  (any empty folder, e.g. `C:/arduino-cpadv-data`)
 - `user:` — this repo's `sketchbooks/CP-ADV` folder (absolute path)
 
 The TFT_eSPI setup for the ADV panel must use the **full** `ST7789_DRIVER`
