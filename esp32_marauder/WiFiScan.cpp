@@ -2672,6 +2672,7 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
   if (scan_mode == WIFI_SCAN_WAR_DRIVE) {
     this->suppress_wardrive_stats = false;
     this->wardrive_start_ms = millis();
+    this->gps_tracker_stats.reset(millis());
     this->reloadGeofences();
     this->geofence_paused = false;
     this->active_geofence_name = "";
@@ -6105,6 +6106,14 @@ void WiFiScan::executeWarDrive() {
       }
       bool do_save;
       String display_string;
+
+      // PURE WARDRIVER: feed the distance tracker every wardrive cycle
+      // (it was only fed in GPS_TRACKER mode, so DIST stayed 0).
+      #ifdef HAS_GPS
+        if (gps_obj.getFixStatus())
+          this->gps_tracker_stats.update(gps_obj.getLatInt(), gps_obj.getLonInt(),
+                                         gps_obj.getAccuracy(), millis());
+      #endif
 
       // Reversed
       // Weighted US-focused wardriving channel schedule.
