@@ -455,7 +455,6 @@ class WiFiScan
     //int num_deauth = 0; // RED
 
     uint32_t initTime = 0;
-    marauder::GpsTrackerStats gps_tracker_stats;
     uint32_t last_ui_update = 0;
     uint32_t last_sour_apple_update = 0;
     bool run_setup = true;
@@ -753,6 +752,9 @@ class WiFiScan
     };
 
     FoxHuntTarget fox_hunt_target;
+
+    marauder::GpsTrackerStats gps_tracker_stats;
+    uint32_t wardrive_start_ms = 0;  // PURE WARDRIVER: scan elapsed clock
 
     volatile bool bt_cb_busy = false;
     volatile bool bt_pending_clear = false;

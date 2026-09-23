@@ -2671,6 +2671,7 @@ void WiFiScan::StartScan(uint8_t scan_mode, uint16_t color) {
 #endif // Pure Wardrive.
   if (scan_mode == WIFI_SCAN_WAR_DRIVE) {
     this->suppress_wardrive_stats = false;
+    this->wardrive_start_ms = millis();
     this->reloadGeofences();
     this->geofence_paused = false;
     this->active_geofence_name = "";
@@ -6596,6 +6597,16 @@ void WiFiScan::displayWardriveStats() {
         display_obj.tft.setCursor(0, (STATUS_BAR_WIDTH * 3) + CHAR_WIDTH + EXT_BUTTON_WIDTH);
       #endif
 
+      // PURE WARDRIVER: time / distance / position at a glance.
+      uint32_t elapsed_s = (millis() - this->wardrive_start_ms) / 1000;
+      char elapsed_text[16];
+      snprintf(elapsed_text, sizeof(elapsed_text), "%02lu:%02u:%02u",
+               (unsigned long)(elapsed_s / 3600), (unsigned)(elapsed_s / 60) % 60, (unsigned)elapsed_s % 60);
+      const float distance_m = this->gps_tracker_stats.distanceMeters();
+      const String distance_text = distance_m >= 1000.0f
+          ? String(distance_m / 1000.0f, 2) + " km"
+          : String(distance_m, 1) + " m";
+
       #ifndef HAS_MINI_SCREEN
         display_obj.tft.setTextSize(3);
         display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
@@ -6613,18 +6624,21 @@ void WiFiScan::displayWardriveStats() {
         display_obj.tft.println("BT:" + (String)this->bt_frames);
         display_obj.tft.setTextSize(1);
         display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
-        display_obj.tft.println("Flock: " + (String)this->flock_devices + "\n");
+        display_obj.tft.println("Flock:" + (String)this->flock_devices + " Sats:" + (String)gps_obj.getNumSats());
       #endif
-      
+
 
       #ifndef HAS_MINI_SCREEN
         display_obj.tft.setTextSize(2);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+        display_obj.tft.println("Sats: " + (String)gps_obj.getNumSats() + "\n");
       #else
         display_obj.tft.setTextSize(1);
+        display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
+        display_obj.tft.println(String(elapsed_text) + " " + distance_text);
       #endif
       display_obj.tft.setTextColor(TFT_WHITE, TFT_NAVY);
-
-      display_obj.tft.println("Sats: " + (String)gps_obj.getNumSats() + "\n");
+      display_obj.tft.println(gps_obj.getLat() + " " + gps_obj.getLon() + "\n");
 
       display_obj.tft.setTextSize(1);
 

@@ -668,6 +668,29 @@ void MenuFunctions::main(uint32_t currentTime)
   #endif
 
 
+  // PURE WARDRIVER: auto-dim after 60s without input, wake on any input.
+  // Backlight only — capture and logging never stop.
+  #ifdef HAS_SCREEN
+    extern void backlightOn();
+    extern void backlightOff();
+    bool ui_activity = pressed;
+    #if defined(MARAUDER_CARDPUTER) || defined(MARAUDER_CARDPUTER_ADV)
+      if (!M5CardputerKeyboard.keysState().word.empty())
+        ui_activity = true;
+    #endif
+    if (ui_activity) {
+      this->last_ui_activity_ms = currentTime;
+      if (this->screen_dimmed) {
+        this->screen_dimmed = false;
+        backlightOn();
+      }
+    } else if (!this->screen_dimmed && (currentTime - this->last_ui_activity_ms >= 60000)) {
+      this->screen_dimmed = true;
+      backlightOff();
+    }
+  #endif
+
+
   // Check if any key coordinate boxes contain the touch coordinates
   // This is for when on a menu
   // Make sure to add certain scanning functions here or else
@@ -5291,8 +5314,11 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.setTextColor(TFT_CYAN);
     display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames + "  BLE " + (String)wifi_scan_obj.bt_frames + "  FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
 
-    // GPS / state / SD box
-    display_obj.tft.drawRoundRect(8, 128, SCREEN_WIDTH - 16, 54, 4, TFT_CYAN);
+    // GPS / state / SD box — expert rows (time/dist/coords) while scanning.
+    const bool expert = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
+    const uint16_t box_y = expert ? 88 : 128;
+    const uint16_t box_h = expert ? 92 : 54;
+    display_obj.tft.drawRoundRect(8, box_y, SCREEN_WIDTH - 16, box_h, 4, TFT_CYAN);
     display_obj.tft.setTextSize(1);
     #ifdef HAS_GPS
       String gpsLine = "GPS ";
@@ -5312,12 +5338,15 @@ void MenuFunctions::displayHomeMenu() {
       display_obj.tft.setTextColor(TFT_DARKGREY);
       String gpsLine = "GPS --";
     #endif
-    display_obj.tft.setCursor(16, 134);
+    uint16_t row_y = box_y + 6;
+    display_obj.tft.setCursor(16, row_y);
     display_obj.tft.print(gpsLine);
+    row_y += 13;
     display_obj.tft.setTextColor(TFT_WHITE);
-    display_obj.tft.setCursor(16, 148);
-    display_obj.tft.print(String("STATE ") + (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE ? "SCANNING" : "IDLE"));
-    display_obj.tft.setCursor(16, 162);
+    display_obj.tft.setCursor(16, row_y);
+    display_obj.tft.print(String("STATE ") + (expert ? "SCANNING" : "IDLE"));
+    row_y += 13;
+    display_obj.tft.setCursor(16, row_y);
     #ifdef HAS_SD
       String sdLine = "SD ";
       uint16_t sdColor = TFT_WHITE;
@@ -5338,6 +5367,29 @@ void MenuFunctions::displayHomeMenu() {
     #endif
     display_obj.tft.setTextColor(sdColor);
     display_obj.tft.print(sdLine);
+    row_y += 13;
+
+    #ifdef HAS_GPS
+      if (expert) {
+        uint32_t elapsed_s = (millis() - wifi_scan_obj.wardrive_start_ms) / 1000;
+        char elapsed_text[16];
+        snprintf(elapsed_text, sizeof(elapsed_text), "%02lu:%02u:%02u",
+                 (unsigned long)(elapsed_s / 3600), (unsigned)(elapsed_s / 60) % 60, (unsigned)elapsed_s % 60);
+        const float distance_m = wifi_scan_obj.gps_tracker_stats.distanceMeters();
+        const String distance_text = distance_m >= 1000.0f
+            ? String(distance_m / 1000.0f, 2) + " km"
+            : String(distance_m, 1) + " m";
+        display_obj.tft.setTextColor(TFT_WHITE);
+        display_obj.tft.setCursor(16, row_y);
+        display_obj.tft.print(String("TIME ") + elapsed_text);
+        row_y += 13;
+        display_obj.tft.setCursor(16, row_y);
+        display_obj.tft.print("DIST " + distance_text);
+        row_y += 13;
+        display_obj.tft.setCursor(16, row_y);
+        display_obj.tft.print(gps_obj.getLat() + " " + gps_obj.getLon());
+      }
+    #endif
 
     // Three big buttons along the bottom
     const uint16_t btn_y[3] = {186, 232, 278};
