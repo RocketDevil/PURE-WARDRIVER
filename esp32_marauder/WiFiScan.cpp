@@ -3136,10 +3136,6 @@ void WiFiScan::StopScan(uint8_t scan_mode) {
     this->writeFooter(currentScanMode == GPS_POI);
   }
 
-  // Close POI file if wardrive was active
-  if (currentScanMode == WIFI_SCAN_WAR_DRIVE)
-    this->closePoiFile();
-
 
   if ((currentScanMode == BT_SCAN_ALL) ||
   (currentScanMode == BT_SCAN_FOX_HUNT) ||
@@ -6362,7 +6358,7 @@ void WiFiScan::drawWardriveGeofenceBadge() {
   #ifdef HAS_SCREEN
     const int16_t badge_height = 12;
     #ifdef HAS_TOUCH
-      // Keep the badge immediately above the 50 px POI touch control.
+      // Keep the badge clear of the bottom touch control.
       const int16_t badge_y = (SCREEN_HEIGHT - 64 > STATUS_BAR_WIDTH * 2) ?
         SCREEN_HEIGHT - 64 : STATUS_BAR_WIDTH * 2;
     #else
@@ -6383,77 +6379,6 @@ void WiFiScan::drawWardriveGeofenceBadge() {
     display_obj.tft.print(label);
   #endif
 }
-
-void WiFiScan::openPoiFile() {
-  #if defined(HAS_GPS) && defined(HAS_SD)
-    int fileIndex = 0;
-    while (SD.exists("/wardrive_poi_" + String(fileIndex) + ".gpx"))
-      fileIndex++;
-    poiFileName = "/wardrive_poi_" + String(fileIndex) + ".gpx";
-    poiFile = SD.open(poiFileName, FILE_WRITE);
-    if (poiFile) {
-      poiFile.print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<gpx version=\"1.1\" creator=\"PURE WARDRIVER\">\n");
-      poiFile.close();
-      poiFileOpen = true;
-      poiCount = 0;
-    } 
-  #endif
-}
-
-void WiFiScan::closePoiFile() {
-  #if defined(HAS_GPS) && defined(HAS_SD)
-    if (poiFileOpen) {
-      if (poiCount > 0) {
-        poiFile = SD.open(poiFileName, FILE_APPEND);
-        if (poiFile) {
-          poiFile.print("</gpx>\n");
-          poiFile.close();
-        }
-      } else {
-        sd_obj.removeFile(poiFileName);
-      }
-      poiFileOpen = false;
-      poiCount = 0;
-    }
-  #endif
-}
-
-#if 0 // Pure Wardrive: POI tagging removed.
-void WiFiScan::tagPOI(const char* label) {
-  #if defined(HAS_GPS) && defined(HAS_SD)
-    if (currentScanMode != WIFI_SCAN_WAR_DRIVE && currentScanMode != WIFI_SCAN_STATION_WAR_DRIVE) {
-      return;
-    }
-    if (!gps_obj.getFixStatus()) {
-      return;
-    }
-    if (!poiFileOpen) {
-      return;
-    }
-    poiCount++;
-    String poiLabel;
-    if (label == nullptr || strlen(label) == 0)
-      poiLabel = "POI " + String(poiCount);
-    else
-      poiLabel = String(label);
-
-    String datetime = gps_obj.getDatetime();
-    datetime.replace(" ", "T");
-    datetime += "Z";
-
-    poiFile = SD.open(poiFileName, FILE_APPEND);
-    if (poiFile) {
-      poiFile.print("  <wpt lat=\"" + gps_obj.getLat() + "\" lon=\"" + gps_obj.getLon() + "\">\n");
-      poiFile.print("    <ele>" + String(gps_obj.getAlt(), 2) + "</ele>\n");
-      poiFile.print("    <time>" + datetime + "</time>\n");
-      poiFile.print("    <name>" + poiLabel + "</name>\n");
-      poiFile.print("  </wpt>\n");
-      poiFile.close();
-    }
-    Serial.println("POI tagged: " + poiLabel + " (" + gps_obj.getLat() + ", " + gps_obj.getLon() + ")");
-  #endif
-}
-#endif // Pure Wardrive.
 
 void WiFiScan::onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
   #ifdef HAS_SCREEN
@@ -6667,7 +6592,6 @@ void WiFiScan::RunBeaconScan(uint8_t scan_mode, uint16_t color) {
       if (gps_obj.getGpsModuleStatus()) {
         startLog("wardrive");
         buffer_obj.append(this->header_line);
-        this->openPoiFile();
       } else {
         return;
       }

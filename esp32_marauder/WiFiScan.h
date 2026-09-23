@@ -712,13 +712,7 @@ class WiFiScan
     uint8_t getSecurityType(const uint8_t* beacon, uint16_t len);
     bool mac_cmp(struct mac_addr addr1, struct mac_addr addr2);
     // Pure Wardrive: u8 mac_cmp removed (SAE-only).
-    // POI tagging during wardrive
-    File poiFile;
-    bool poiFileOpen = false;
-    String poiFileName = "";
-
-    void openPoiFile();
-    void closePoiFile();
+    // Pure Wardrive: wardrive POI file removed (no wardrive_poi_*.gpx).
 
     void executeWarDrive();
     // Pure Wardrive: attack/BLE-spam decls removed.
@@ -1036,9 +1030,6 @@ class WiFiScan
     void StartScan(uint8_t scan_mode, uint16_t color = 0);
     void StopScan(uint8_t scan_mode);
     void setBaseMacAddress(uint8_t macAddr[6]);
-
-    uint16_t poiCount = 0;
-    // Pure Wardrive: tagPOI removed.
 
     bool save_serial = false;
     void startPcap(const char* file_name);
