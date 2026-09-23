@@ -6116,11 +6116,14 @@ void WiFiScan::executeWarDrive() {
       #endif
 
       // Reversed
-      // Weighted US-focused wardriving channel schedule.
-      // 2.4 GHz: 1, 6, 11 prioritized.
-      // 5 GHz: common non-DFS lower/upper UNII channels prioritized.
+      // Weighted wardriving channel schedule, US- or EU-focused.
+      // US 2.4 GHz: 1, 6, 11 prioritized; 5 GHz incl. 149-177.
+      // EU 2.4 GHz: 1, 7, 13 prioritized (1-13 legal); 5 GHz ends at 140.
+      String region_sel = settings_obj.loadSetting<String>("Region");
+      region_sel.toUpperCase();
+      const bool use_us = (region_sel == "US");
       #ifdef HAS_DUAL_BAND
-      static const uint8_t wardrive_channels[] = {
+      static const uint8_t wardrive_channels_us[] = {
         161, 157, 153, 149,
         48, 44, 40, 36,
         11, 6, 1,
@@ -6136,19 +6139,45 @@ void WiFiScan::executeWarDrive() {
         // Full 2.4 GHz pass (reversed)
         14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
       };
+      static const uint8_t wardrive_channels_eu[] = {
+        48, 44, 40, 36,
+        64, 60, 56, 52,
+        13, 7, 1,
+        48, 44, 40, 36,
+        64, 60, 56, 52,
+        13, 7, 1,
+
+        140, 136, 132, 128, 124, 120, 116, 112, 108, 104, 100,
+        64, 60, 56, 52,
+        48, 44, 40, 36,
+
+        // Full 2.4 GHz pass (reversed, EU 1-13)
+        13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+      };
+      const uint8_t* wardrive_channels = use_us ? wardrive_channels_us : wardrive_channels_eu;
+      const uint8_t wardrive_channel_count = use_us
+          ? sizeof(wardrive_channels_us) / sizeof(wardrive_channels_us[0])
+          : sizeof(wardrive_channels_eu) / sizeof(wardrive_channels_eu[0]);
       #else
-      static const uint8_t wardrive_channels[] = {
+      static const uint8_t wardrive_channels_us[] = {
         11, 6, 1,
         11, 6, 1,
 
         // Full 2.4 GHz pass (reversed)
         14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
       };
+      static const uint8_t wardrive_channels_eu[] = {
+        13, 7, 1,
+        13, 7, 1,
+
+        // Full 2.4 GHz pass (reversed, EU 1-13)
+        13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
+      };
+      const uint8_t* wardrive_channels = use_us ? wardrive_channels_us : wardrive_channels_eu;
+      const uint8_t wardrive_channel_count = use_us
+          ? sizeof(wardrive_channels_us) / sizeof(wardrive_channels_us[0])
+          : sizeof(wardrive_channels_eu) / sizeof(wardrive_channels_eu[0]);
       #endif
-
-      //static uint8_t wardrive_channel_index = 0;
-
-      const uint8_t wardrive_channel_count = sizeof(wardrive_channels) / sizeof(wardrive_channels[0]);
 
       if (currentScanMode == WIFI_SCAN_WAR_DRIVE) {
         #ifdef HAS_BT

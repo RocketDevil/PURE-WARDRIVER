@@ -171,6 +171,8 @@ void Settings::_buildCache() {
       loadSecret(name, i, _cache.wt);
     else if (strcmp(name, WDG_KEY_NAME) == 0)
       loadSecret(name, i, _cache.wdg_key);
+    else if (strcmp(name, "Region") == 0)
+      _cache.Region = json["Settings"][i]["value"].as<String>();
   }
 
   if (migrateSecrets) {
@@ -304,6 +306,8 @@ template <> String Settings::loadSetting<String>(const char* key) {
     return _cache.wt;
   if (strcmp(key, WDG_KEY_NAME) == 0)
     return _cache.wdg_key;
+  if (strcmp(key, "Region") == 0)
+    return _cache.Region;
 
   // Unknown String key: fall back to JSON so the setting can be auto-created.
   DynamicJsonDocument json(JSON_SETTING_SIZE);
@@ -507,6 +511,8 @@ template <> bool Settings::saveSetting<bool>(const char* key, String value) {
         _cache.wt = value;
       else if (strcmp(key, WDG_KEY_NAME) == 0)
         _cache.wdg_key = value;
+      else if (strcmp(key, "Region") == 0)
+        _cache.Region = value;
 
       this->printJsonSettings(settings_string);
 
@@ -690,6 +696,12 @@ bool Settings::createDefaultSettings(fs::FS &fs, bool spec, uint8_t index, const
     jsonBuffer["Settings"][12].createNestedArray("value");
     jsonBuffer["Settings"][12]["range"]["min"] = 0;
     jsonBuffer["Settings"][12]["range"]["max"] = MAX_GEOFENCES;
+
+    jsonBuffer["Settings"][13]["name"] = "Region";
+    jsonBuffer["Settings"][13]["type"] = "String";
+    jsonBuffer["Settings"][13]["value"] = "EU";
+    jsonBuffer["Settings"][13]["range"]["min"] = "";
+    jsonBuffer["Settings"][13]["range"]["max"] = "";
 
     serializeJson(jsonBuffer, settingsFile);
     serializeJson(jsonBuffer, settings_string);

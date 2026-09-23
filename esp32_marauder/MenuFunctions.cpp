@@ -4010,6 +4010,23 @@ void MenuFunctions::RunSetup()
     }
   }
 
+  // PURE WARDRIVER: region toggle (EU/US wardrive channel schedules).
+  {
+    String regionLabel = settings_obj.loadSetting<String>("Region");
+    regionLabel.toUpperCase();
+    if (regionLabel != "US" && regionLabel != "EU") regionLabel = "EU";
+    this->addNodes(&settingsMenu, ("Region: " + regionLabel).c_str(), TFTLIGHTGREY, SETTINGS, [this]() {
+      String cur = settings_obj.loadSetting<String>("Region");
+      cur.toUpperCase();
+      String next = (cur == "US") ? "EU" : "US";
+      settings_obj.saveSetting<bool>("Region", next);
+      display_obj.clearScreen();
+      display_obj.showCenterText(("Region: " + next).c_str(), TFT_HEIGHT / 2, true);
+      delay(1000);
+      this->changeMenu(&settingsMenu, true);
+    }, false);
+  }
+
   Serial.println("Finished settings nodes");
 
   // Specific setting menu

@@ -58,6 +58,7 @@ class Settings {
       String wu           = "";
       String wt           = "";
       String wdg_key      = "";
+      String Region       = "EU";
     } _cache;
 
     void _buildCache();  // parse json_settings_string -> _cache
