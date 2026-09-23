@@ -5312,7 +5312,7 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.drawCentreString(String(wifi_scan_obj.beacon_frames + wifi_scan_obj.bt_frames), SCREEN_WIDTH / 2, 36, 1);
     display_obj.tft.setTextSize(1);
     display_obj.tft.setTextColor(TFT_CYAN);
-    display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames + "  BLE " + (String)wifi_scan_obj.bt_frames + "  FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 100, 1);
+    display_obj.tft.drawCentreString("WIFI " + (String)wifi_scan_obj.beacon_frames + "  BLE " + (String)wifi_scan_obj.bt_frames + "  FLOCK " + (String)wifi_scan_obj.flock_devices, SCREEN_WIDTH / 2, 80, 1);
 
     // GPS / state / SD box — expert rows (time/dist/coords) while scanning.
     const bool expert = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
