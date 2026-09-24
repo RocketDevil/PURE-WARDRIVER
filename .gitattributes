@@ -1,0 +1,7 @@
+# PURE WARDRIVER: firmware images are binary, never touch line endings.
+*.bin binary
+*.elf binary
+*.map binary
+*.hex binary
+*.png binary
+*.jpg binary
