@@ -283,6 +283,8 @@ void Display::drawBootSplash() {
   tft.setTextColor(TFT_WHITE);
   #ifdef MARAUDER_CARDPUTER_ADV
     tft.drawCentreString("CP-ADV PURE WARDRIVE", width / 2, layout.title_y, 1);
+  #elif defined(MARAUDER_CYD_C5)
+    tft.drawCentreString("CYD-C5 PURE WARDRIVE", width / 2, layout.title_y, 1);
   #else
     tft.drawCentreString("V8 PURE WARDRIVE", width / 2, layout.title_y, 1);
   #endif

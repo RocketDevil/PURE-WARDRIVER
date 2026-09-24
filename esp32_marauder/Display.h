@@ -25,6 +25,9 @@
 #if defined(MARAUDER_CARDPUTER_ADV) && !defined(ST7789_DRIVER) && !defined(ST7789_2_DRIVER)
   #error "MARAUDER_CARDPUTER_ADV requires its ST7789 TFT_eSPI setup (full driver)"
 #endif
+#if defined(MARAUDER_CYD_C5) && !defined(ST7789_DRIVER)
+  #error "MARAUDER_CYD_C5 requires User_Setup_marauder_cyd_c5.h (ST7789_DRIVER)"
+#endif
 #if defined(MARAUDER_CARDPUTER) && !defined(ST7789_2_DRIVER)
   #error "MARAUDER_CARDPUTER requires its ST7789_2_DRIVER TFT_eSPI setup"
 #endif

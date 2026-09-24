@@ -766,7 +766,14 @@ class WiFiScan
     static MacEntry mac_entries[mac_history_len_half];
     static uint8_t mac_entry_state[mac_history_len_half];
 
-    String header_line = "WigleWifi-1.6,appRelease=" + (String)PURE_WARDRIVER_VERSION + ",model=PURE WARDRIVER,release=" + (String)PURE_WARDRIVER_VERSION + ",device=PURE WARDRIVER,display=SPI TFT,board=Marauder v8,brand=PURE WARDRIVER,star=Sol,body=3,subBody=0\nMAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type\n";
+    #ifdef MARAUDER_CYD_C5
+      #define PURE_WARDRIVER_BOARD "NM-CYD-C5"
+    #elif defined(MARAUDER_CARDPUTER_ADV)
+      #define PURE_WARDRIVER_BOARD "M5 Cardputer ADV"
+    #else
+      #define PURE_WARDRIVER_BOARD "Marauder v8"
+    #endif
+    String header_line = "WigleWifi-1.6,appRelease=" + (String)PURE_WARDRIVER_VERSION + ",model=PURE WARDRIVER,release=" + (String)PURE_WARDRIVER_VERSION + ",device=PURE WARDRIVER,display=SPI TFT,board=" PURE_WARDRIVER_BOARD ",brand=PURE WARDRIVER,star=Sol,body=3,subBody=0\nMAC,SSID,AuthMode,FirstSeen,Channel,Frequency,RSSI,CurrentLatitude,CurrentLongitude,AltitudeMeters,AccuracyMeters,RCOIs,MfgrId,Type\n";
 
     static uint16_t channelToFrequency(uint8_t channel) {
       if (channel >= 1 && channel <= 14)

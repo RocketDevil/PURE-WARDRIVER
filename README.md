@@ -58,6 +58,11 @@ More devices are in progress. In testing right now: **M5 Cardputer ADV**
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CP-ADV.bin).
 Feedback welcome!
 
+Just added (untested, no field tester yet): **NM-CYD-C5**
+(RockBase CYD, ESP32-C5, 2.8" touch) —
+[Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CYD-C5.bin).
+Needs the external NM-ATGM336H GPS module for logging.
+
 ## Flashing
 
 Easiest: [=> WEB FLASHER <=](https://thelastoutpostworkshop.github.io/ESPConnect/)

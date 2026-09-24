@@ -1883,6 +1883,8 @@ void MenuFunctions::showBootChecklist() {
     display_obj.tft.setTextColor(TFT_CYAN);
     #ifdef MARAUDER_CARDPUTER_ADV
       display_obj.tft.drawCentreString("CP-ADV PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
+    #elif defined(MARAUDER_CYD_C5)
+      display_obj.tft.drawCentreString("CYD-C5 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
     #else
       display_obj.tft.drawCentreString("V8 PURE WARDRIVE boot", SCREEN_WIDTH / 2, 8, 1);
     #endif
