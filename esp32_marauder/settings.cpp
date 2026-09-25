@@ -45,6 +45,29 @@ static JsonObject ensureGeofenceSetting(DynamicJsonDocument& json) {
   return setting;
 }
 
+static JsonObject findRegionSetting(DynamicJsonDocument& json) {
+  for (JsonObject setting : json["Settings"].as<JsonArray>()) {
+    if (strcmp(setting["name"] | "", "Region") == 0)
+      return setting;
+  }
+  return JsonObject();
+}
+
+// PURE WARDRIVER: Region kam später dazu — Alt-Installationen haben den
+// Eintrag nicht. Ohne ihn schlägt saveSetting fehl (kein Treffer in der
+// Schleife) und der Toggle wirkt nur bis zum Reboot.
+static JsonObject ensureRegionSetting(DynamicJsonDocument& json) {
+  JsonObject setting = findRegionSetting(json);
+  if (!setting.isNull()) return setting;
+  setting = json["Settings"].as<JsonArray>().createNestedObject();
+  setting["name"] = "Region";
+  setting["type"] = "String";
+  setting["value"] = "EU";
+  setting["range"]["min"] = "";
+  setting["range"]["max"] = "";
+  return setting;
+}
+
 static bool writeSettingsDocument(DynamicJsonDocument& json, String& cache) {
   File file = SPIFFS.open("/settings.json", FILE_WRITE);
   if (!file) return false;
@@ -227,6 +250,10 @@ bool Settings::begin() {
   }
   if (findGeofenceSetting(jsonBuffer).isNull()) {
     ensureGeofenceSetting(jsonBuffer);
+    settings_changed = true;
+  }
+  if (findRegionSetting(jsonBuffer).isNull()) {
+    ensureRegionSetting(jsonBuffer);
     settings_changed = true;
   }
 

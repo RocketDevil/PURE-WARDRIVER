@@ -4021,7 +4021,18 @@ void MenuFunctions::RunSetup()
       String cur = settings_obj.loadSetting<String>("Region");
       cur.toUpperCase();
       String next = (cur == "US") ? "EU" : "US";
-      settings_obj.saveSetting<bool>("Region", next);
+      if (settings_obj.saveSetting<bool>("Region", next)) {
+        // Menü-Label sofort mitziehen: changeMenu() rendert die bestehende
+        // Liste nur neu, ohne die Nodes neu aufzubauen.
+        for (int idx = 0; idx < settingsMenu.list->size(); idx++) {
+          MenuNode node = settingsMenu.list->get(idx);
+          if (node.name.startsWith("Region:")) {
+            node.name = "Region: " + next;
+            settingsMenu.list->set(idx, node);
+            break;
+          }
+        }
+      }
       display_obj.clearScreen();
       display_obj.showCenterText(("Region: " + next).c_str(), TFT_HEIGHT / 2, true);
       delay(1000);
