@@ -58,7 +58,7 @@ More devices are supported. Field-tested: **M5 Cardputer ADV**
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CP-ADV.bin).
 Feedback welcome!
 
-Just added (untested — field tester hasn't had time yet): **NM-CYD-C5**
+Just added (untested, no field tester yet): **NM-CYD-C5**
 (RockBase CYD, ESP32-C5, 2.8" touch) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CYD-C5.bin).
 Needs the external NM-ATGM336H GPS module for logging.
