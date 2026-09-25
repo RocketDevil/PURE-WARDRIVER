@@ -15,4 +15,4 @@ Ready-to-flash images (e.g. with the
 - `Pure-Wardrive-CYD-C5-app.bin` — NM-CYD-C5, update (`0x10000`)
 
 Rule: first install → full `.bin` @`0x0`, every later update → `-app.bin`
-@`0x10000`. (Still testing for Cardputer ADV.)
+@`0x10000`.

@@ -53,12 +53,12 @@ PURE WARDRIVER is built primarily for the **Marauder V8**
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-V8.bin)
 ([all files](firmware/)).
 
-More devices are in progress. In testing right now: **M5 Cardputer ADV**
+More devices are supported. Field-tested: **M5 Cardputer ADV**
 (keyboard instead of touch) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CP-ADV.bin).
 Feedback welcome!
 
-Just added (untested, no field tester yet): **NM-CYD-C5**
+Just added (untested — field tester hasn't had time yet): **NM-CYD-C5**
 (RockBase CYD, ESP32-C5, 2.8" touch) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CYD-C5.bin).
 Needs the external NM-ATGM336H GPS module for logging.
@@ -87,7 +87,7 @@ sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
 Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
 (see `.github/workflows/build_parallel.yml` for versions).
 
-## Building (M5 Cardputer ADV, <ins> Still Testing this Build atm!!! </ins>)
+## Building (M5 Cardputer ADV)
 
 Uses its own environment in `sketchbooks/CP-ADV` (core 2.0.11).
 First copy the sample config and **replace both paths with your own,
