@@ -2345,7 +2345,9 @@ void MenuFunctions::RunSetup()
       });
     }
   #endif
-  this->addNodes(&fullMenu, "Settings", TFTBLUE, DEVICE, [this]() {
+  // PURE WARDRIVER: opens deviceMenu (title "Device"), not settingsMenu —
+  // label it accordingly so the path reads Menu > Device > Settings.
+  this->addNodes(&fullMenu, "Device", TFTBLUE, DEVICE, [this]() {
     this->changeMenu(&deviceMenu, true);
   });
   this->addNodes(&fullMenu, text_table1[30], TFTLIGHTGREY, REBOOT, []() {
