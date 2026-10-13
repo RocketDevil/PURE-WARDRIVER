@@ -15,6 +15,10 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
 - **SYNC** — upload log files to [WDGWars](https://wdgwars.pl), [WiGLE](https://wigle.net), or both
 - **MENU** — upload file browser, Saved WiFi, geofences, GPS tools, settings
 - Boot self-test, blue touch UI, 5s SCAN toggle guard + pocket-press guard
+- Expert home while scanning: time/dist/coords plus channel, AP rate and
+  GPS accuracy; GPS row is green on fix, red without
+- Two-tap STOP: first tap shows SURE?, second tap ends the scan
+  (stray taps can't kill a session)
 
 ## First run
 
@@ -43,7 +47,7 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
    WiFi switches off again to save battery — opening SYNC reconnects.
 3. Wait for GPS fix.
 4. Press **SCAN** to start logging (`/wardrive_N.csv` on SD, WigleWifi-1.6).
-5. Press **STOP** (5s guard against double-taps) to stop.
+5. Press **STOP** twice to stop (first tap shows SURE? as pocket-press guard).
 6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
 
 ## Hardware
