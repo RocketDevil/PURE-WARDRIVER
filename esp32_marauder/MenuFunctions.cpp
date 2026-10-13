@@ -1750,13 +1750,31 @@ bool MenuFunctions::isKeyPressed(char c)
 
     bool scanning = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
     this->addNodes(&mainMenu, scanning ? "STOP" : "SCAN", scanning ? TFTRED : TFTGREEN, BEACON_SNIFF, [this]() {
-      // 5s guard against accidental double-tap aborting a scan.
       uint32_t now = millis();
-      if (this->last_scan_toggle_ms != 0 && (now - this->last_scan_toggle_ms) < 5000) {
-        Serial.println(F("SCAN ignored: toggle guard active"));
-        return;
+      bool stopping = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
+      if (stopping) {
+        // PURE WARDRIVER two-tap stop guard: the middle touch zone is
+        // SELECT, so a stray tap would otherwise end the scan. First tap
+        // arms (button shows SURE?), second tap within 5s ends it.
+        if (this->stop_arm_ms == 0 || (now - this->stop_arm_ms) >= 5000) {
+          this->stop_arm_ms = now;
+          this->last_scan_toggle_ms = now;
+          Serial.println(F("STOP armed: tap again to end scan"));
+          this->buildHomeMenu();
+          this->changeMenu(&mainMenu, true);
+          return;
+        }
+        this->stop_arm_ms = 0;
+        this->last_scan_toggle_ms = now;
+      } else {
+        // 5s guard against accidental double-tap (re)starting a scan.
+        if (this->last_scan_toggle_ms != 0 && (now - this->last_scan_toggle_ms) < 5000) {
+          Serial.println(F("SCAN ignored: toggle guard active"));
+          return;
+        }
+        this->last_scan_toggle_ms = now;
+        this->stop_arm_ms = 0;
       }
-      this->last_scan_toggle_ms = now;
       this->show_home_during_scan = false;
       wifi_scan_obj.suppress_wardrive_stats = false;
       if (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
@@ -5308,9 +5326,19 @@ void MenuFunctions::displayCurrentMenu(int start_index)
 void MenuFunctions::displayHomeMenu() {
   #ifdef HAS_SCREEN
     // Keep the SCAN/STOP label in sync with the wardrive state.
+    // Armed stop shows SURE? until the 5s window expires.
     if (current_menu->list != nullptr && current_menu->list->size() > 0) {
       MenuNode scanNode = current_menu->list->get(0);
-      scanNode.name = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ? "STOP" : "SCAN";
+      if (current_menu == &mainMenu && wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) {
+        if (this->stop_arm_ms != 0 && (millis() - this->stop_arm_ms) < 5000)
+          scanNode.name = "SURE?";
+        else {
+          scanNode.name = "STOP";
+          this->stop_arm_ms = 0;
+        }
+      } else {
+        scanNode.name = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE) ? "STOP" : "SCAN";
+      }
       current_menu->list->set(0, scanNode);
     }
     // PURE WARDRIVER: plain navy for now (logo background disabled
@@ -5352,25 +5380,28 @@ void MenuFunctions::displayHomeMenu() {
     const uint16_t box_h = expert ? 92 : 54;
     display_obj.tft.drawRoundRect(8, box_y, SCREEN_WIDTH - 16, box_h, 4, TFT_CYAN);
     display_obj.tft.setTextSize(1);
+    uint16_t row_y = box_y + 6;
+    // PURE WARDRIVER: full-row fix indicator — green = fix, red = none,
+    // readable at a glance from the corner of the eye.
+    bool gps_fix = false;
+    #ifdef HAS_GPS
+      gps_fix = gps_obj.getGpsModuleStatus() && gps_obj.getFixStatus();
+    #endif
+    display_obj.tft.fillRect(8, row_y - 2, SCREEN_WIDTH - 16, 12,
+                             gps_fix ? TFT_GREEN : TFT_RED);
     #ifdef HAS_GPS
       String gpsLine = "GPS ";
       if (gps_obj.getGpsModuleStatus()) {
-        if (gps_obj.getFixStatus()) {
-          display_obj.tft.setTextColor(TFT_WHITE);
-          gpsLine += "fix " + (String)gps_obj.getNumSats() + " sat";
-        } else {
-          display_obj.tft.setTextColor(TFT_YELLOW);
-          gpsLine += "searching " + (String)gps_obj.getNumSats() + " sat";
-        }
+        gpsLine += gps_fix
+            ? "fix " + (String)gps_obj.getNumSats() + " sat"
+            : "searching " + (String)gps_obj.getNumSats() + " sat";
       } else {
-        display_obj.tft.setTextColor(TFT_DARKGREY);
         gpsLine += "--";
       }
     #else
-      display_obj.tft.setTextColor(TFT_DARKGREY);
       String gpsLine = "GPS --";
     #endif
-    uint16_t row_y = box_y + 6;
+    display_obj.tft.setTextColor(gps_fix ? TFT_BLACK : TFT_WHITE);
     display_obj.tft.setCursor(16, row_y);
     display_obj.tft.print(gpsLine);
     row_y += 13;

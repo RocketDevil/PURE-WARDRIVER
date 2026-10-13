@@ -141,6 +141,9 @@ class MenuFunctions
     float _graph_scale = 1.0;
     uint32_t initTime = 0;
     uint32_t last_scan_toggle_ms = 0;
+    // PURE WARDRIVER: two-tap stop guard — first STOP tap arms (button
+    // shows SURE?), second tap within the window ends the scan. 0 = idle.
+    uint32_t stop_arm_ms = 0;
     int menu_start_index = 0;
     uint8_t mini_kb_index = 0;
     uint8_t old_gps_sat_count = 0;
