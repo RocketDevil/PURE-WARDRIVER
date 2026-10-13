@@ -84,8 +84,7 @@ sketchbook `TFT_eSPI` library and enable it in `User_Setup_Select.h`.
   --warnings none ./esp32_marauder --output-dir ./build_pure_wardrive_v8
 ```
 
-Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook
-(see `.github/workflows/build_parallel.yml` for versions).
+Requires Arduino-ESP32 core 3.3.4 and the libraries in your sketchbook.
 
 ## Building (M5 Cardputer ADV)
 
