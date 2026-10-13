@@ -5403,6 +5403,9 @@ void MenuFunctions::displayHomeMenu() {
 
     #ifdef HAS_GPS
       if (expert) {
+        // PURE WARDRIVER: expert telemetry in two columns so CH/RATE/ACC
+        // fit without growing the box (row count unchanged).
+        const uint16_t col_x = SCREEN_WIDTH / 2 + 8;
         uint32_t elapsed_s = (millis() - wifi_scan_obj.wardrive_start_ms) / 1000;
         char elapsed_text[16];
         snprintf(elapsed_text, sizeof(elapsed_text), "%02lu:%02u:%02u",
@@ -5411,15 +5414,26 @@ void MenuFunctions::displayHomeMenu() {
         const String distance_text = distance_m >= 1000.0f
             ? String(distance_m / 1000.0f, 2) + " km"
             : String(distance_m, 1) + " m";
+        const uint32_t ap_total = wifi_scan_obj.beacon_frames + wifi_scan_obj.bt_frames;
+        const String rate_text = (elapsed_s >= 5)
+            ? String(ap_total * 60 / elapsed_s) + "/m"
+            : "--";
+        const String acc_text = gps_obj.getFixStatus()
+            ? String(gps_obj.getAccuracy(), 1) + "m"
+            : "--";
         display_obj.tft.setTextColor(TFT_WHITE);
         display_obj.tft.setCursor(16, row_y);
         display_obj.tft.print(String("TIME ") + elapsed_text);
+        display_obj.tft.setCursor(col_x, row_y);
+        display_obj.tft.print(String("CH ") + wifi_scan_obj.set_channel);
         row_y += 13;
         display_obj.tft.setCursor(16, row_y);
         display_obj.tft.print("DIST " + distance_text);
+        display_obj.tft.setCursor(col_x, row_y);
+        display_obj.tft.print("RATE " + rate_text);
         row_y += 13;
         display_obj.tft.setCursor(16, row_y);
-        display_obj.tft.print(gps_obj.getLat() + " " + gps_obj.getLon());
+        display_obj.tft.print(gps_obj.getLat() + " " + gps_obj.getLon() + " " + acc_text);
       }
     #endif
 
