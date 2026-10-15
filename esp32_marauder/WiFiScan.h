@@ -232,7 +232,14 @@
 
 #define WIGLE_UPLOAD 0
 #define WDG_UPLOAD   1
-#define BOTH_UPLOAD  2
+#define WARDRIFT_UPLOAD 2
+#define ALL_UPLOAD   3
+
+// PURE WARDRIVER: Wardrift ingest API. Raw Wigle CSV straight to the
+// signals endpoint (X-API-Key); the server derives idempotency, assigns
+// sequence numbers and parses rows — no JSON envelope needed (v2 docs).
+#define WARDRIFT_API_HOST "wardrift.net"
+#define WARDRIFT_API_PATH "/v1/ingest/signals"
 
 // PURE WARDRIVER: SD upload credentials.
 #define UPLOAD_WIFI_FILE "/wifi-upload-credentials.txt"
@@ -688,6 +695,7 @@ class WiFiScan
 
     bool wigleUpload(String filePath);
     bool wdgwarsUpload(String filePath);
+    bool wardriftUpload(String filePath);
     void writeSidecar(String filePath, String service);
     bool sidecarExists(String filePath, String service); 
     #ifdef HAS_SCREEN

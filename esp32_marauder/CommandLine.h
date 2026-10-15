@@ -105,7 +105,7 @@ const char PROGMEM HELP_GEOFENCE_CMD[] = "geofence list/set <1-5> <lat> <lon> <0
 
 // WiFi Aux
 const char PROGMEM HELP_JOIN_CMD[] = "join -a <index> -p <password>/-s";
-const char PROGMEM HELP_UPLOAD_CMD[] = "upload -d <wdg/wigle/both>";
+const char PROGMEM HELP_UPLOAD_CMD[] = "upload -d <wdg/wigle/wardrift/all>";
 
 const char PROGMEM BRIGHTNESS_CMD[] = "brightness";
 const char PROGMEM HELP_BRIGHTNESS_CMD[] = "brightness [-c cycle] [-s <0-9>]";

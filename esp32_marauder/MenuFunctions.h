@@ -210,6 +210,9 @@ class MenuFunctions
     void displayHomeMenu();
     void buildFileActionMenu(const String& filename);
     void doUpload(const String& filename, uint8_t uploadType, const char* label);
+    // PURE WARDRIVER: shared bulk-upload bodies (all-files / selected-file).
+    void uploadBulkFiles(uint8_t uploadType, const char* okLabel, const char* failLabel);
+    void uploadSelectedFile(uint8_t uploadType, const char* okLabel, const char* failLabel);
     void setupSDFileList(bool update = false);
     void buildSDFileMenu(bool update = false);
     void buildSavedWifiMenu(bool replace_mode = false);

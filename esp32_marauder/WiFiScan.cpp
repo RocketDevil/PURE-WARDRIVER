@@ -6,6 +6,7 @@
 #include "WdgResponse.h"
 #include "UploadStreamBuffer.h"
 #include "lang_var.h"
+#include "SwarmNode.h"
 
 #ifdef HAS_PSRAM
   struct mac_addr* mac_history = nullptr;
@@ -676,7 +677,18 @@ extern "C" {
                     display_string.concat(F(" | GPS: No Fix"));
                   }
 
-                  String wardrive_line = (String)advertisedDevice->getAddress().toString().c_str() + ",,[BLE]," + gps_obj.getDatetime() + ",0,0," + (String)advertisedDevice->getRSSI() + "," + gps_obj.getLat() + "," + gps_obj.getLon() + "," + gps_obj.getAlt() + "," + gps_obj.getAccuracy() + ",,,BLE\n";
+                  // PURE WARDRIVER: optional last-known-position logging.
+                  String useLat = gps_obj.getLat();
+                  String useLon = gps_obj.getLon();
+                  float useAcc = gps_obj.getAccuracy();
+                  String useDt = gps_obj.getDatetime();
+                  float useAlt = gps_obj.getAlt();
+                  if (!do_save && settings_obj.loadSetting<bool>("LogNoFix"))
+                    do_save = gps_obj.getLastKnown(useLat, useLon, useAcc,
+                                                   useDt, useAlt,
+                                                   LAST_KNOWN_MAX_AGE_MS);
+
+                  String wardrive_line = (String)advertisedDevice->getAddress().toString().c_str() + ",,[BLE]," + useDt + ",0,0," + (String)advertisedDevice->getRSSI() + "," + useLat + "," + useLon + "," + useAlt + "," + useAcc + ",,,BLE\n";
                   Serial.print(wardrive_line);
 
                   if (do_save && !wifi_scan_obj.isGeofencePaused())
@@ -685,6 +697,11 @@ extern "C" {
                   wifi_scan_obj.save_mac(mac_char);
 
                   wifi_scan_obj.bt_frames++;
+
+                  // PURE WARDRIVER Swarm: mirror sightings to the phone queue.
+                  swarm_obj.reportBT(String(advertisedDevice->getName().c_str()),
+                                     String(advertisedDevice->getAddress().toString().c_str()),
+                                     advertisedDevice->getRSSI());
 
                   #ifndef HAS_NIMBLE_2
                     uint8_t* payLoad = advertisedDevice->getPayload();
@@ -6209,7 +6226,17 @@ void WiFiScan::executeWarDrive() {
 
       if (scan_status >= 0) {
         for (int i = 0; i < scan_status; i++) {
+          // PURE WARDRIVER: optional last-known-position logging (LogNoFix,
+          // max 10 min old) for GPS dead zones like garages/malls.
+          String useLat = gps_obj.getLat();
+          String useLon = gps_obj.getLon();
+          float useAcc = gps_obj.getAccuracy();
+          String useDt = gps_obj.getDatetime();
+          float useAlt = gps_obj.getAlt();
           do_save = gps_obj.getFixStatus();
+          if (!do_save && settings_obj.loadSetting<bool>("LogNoFix"))
+            do_save = gps_obj.getLastKnown(useLat, useLon, useAcc, useDt,
+                                           useAlt, LAST_KNOWN_MAX_AGE_MS);
 
           uint8_t *this_bssid_raw = WiFi.BSSID(i);
           char this_bssid[18] = {0};
@@ -6237,20 +6264,24 @@ void WiFiScan::executeWarDrive() {
             WiFi.BSSIDstr(i) + "," +
             ssid + "," +
             this->security_int_to_string(WiFi.encryptionType(i)) + "," +
-            gps_obj.getDatetime() + "," +
+            useDt + "," +
             (String)WiFi.channel(i) + "," +
             (String)channelToFrequency(WiFi.channel(i)) + "," +
             (String)WiFi.RSSI(i) + "," +
-            gps_obj.getLat() + "," +
-            gps_obj.getLon() + "," +
-            gps_obj.getAlt() + "," +
-            gps_obj.getAccuracy() + ",,,WIFI\n";
+            useLat + "," +
+            useLon + "," +
+            useAlt + "," +
+            useAcc + ",,,WIFI\n";
 
           Serial.print((String)this->mac_history_cursor + " | " + wardrive_line);
 
           if (do_save) {
             buffer_obj.append(wardrive_line);
           }
+
+          // PURE WARDRIVER Swarm: mirror sightings to the phone queue.
+          swarm_obj.reportAP(ssid, WiFi.BSSIDstr(i), (uint8_t)WiFi.channel(i),
+                             WiFi.RSSI(i), WiFi.encryptionType(i));
 
           this->beacon_frames++;
         }
@@ -6266,9 +6297,9 @@ void WiFiScan::executeWarDrive() {
             esp_wifi_set_country(&country);
             esp_event_loop_create_default();
           #endif
-          this->throwThatShitInACircle();
           this->setWiFiMode(WIFI_MODE_AP, beaconSnifferCallback);
           this->changeChannel(1);
+          this->throwThatShitInACircle();
           uint8_t ap_mac[6];
           esp_read_mac(ap_mac, ESP_MAC_WIFI_SOFTAP);
           for (int i = 0; i < 3; i++)
@@ -6807,6 +6838,13 @@ void WiFiScan::RunSAEScan(uint8_t scan_mode, uint16_t color) {
 void WiFiScan::throwThatShitInACircle() {
   esp_err_t err;
   wifi_config_t conf;
+  // PURE WARDRIVER: AP config needs AP mode up — during hopping the stack
+  // is still NULL/monitor, then the call fails with 0x3005 every cycle.
+  // Skip silently there; a failure in AP mode is still reported.
+  wifi_mode_t cur_mode;
+  if (esp_wifi_get_mode(&cur_mode) != ESP_OK ||
+      (cur_mode != WIFI_MODE_AP && cur_mode != WIFI_MODE_APSTA))
+    return;
   #ifndef HAS_DUAL_BAND
     err = esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_LR);
   #else
@@ -11697,6 +11735,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
           if (val.length() == 0) continue;
           const char* skey = nullptr;
           if (key == "wdg_key") skey = WDG_KEY_NAME;
+          else if (key == "wrd_key") skey = WRD_KEY_NAME;
           else if (key == "wu" || key == "wigle_user") skey = "wu";
           else if (key == "wt" || key == "wigle_token") skey = "wt";
           if (skey != nullptr && applyUploadApiKey(skey, val)) {
@@ -11715,6 +11754,10 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       if (applyUploadApiKey(WDG_KEY_NAME, readUploadKeyFile("/wdg_key.txt"))) {
         any = true;
         sd_obj.removeFile("/wdg_key.txt");
+      }
+      if (applyUploadApiKey(WRD_KEY_NAME, readUploadKeyFile("/wrd_key.txt"))) {
+        any = true;
+        sd_obj.removeFile("/wrd_key.txt");
       }
       if (applyUploadApiKey("wu", readUploadKeyFile("/wigle_api_name.txt"))) {
         any = true;
@@ -11799,11 +11842,13 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     bool wigle_already = !retry && this->sidecarExists(filePath, "wigle");
     bool wdg_already   = !retry && this->sidecarExists(filePath, "wdg");
+    bool wrd_already   = !retry && this->sidecarExists(filePath, "wrd");
 
     bool wigle_ok = wigle_already;
     bool wdg_ok   = wdg_already;
+    bool wrd_ok   = wrd_already;
 
-    if ((upload_type == WIGLE_UPLOAD) || (upload_type == BOTH_UPLOAD)) {
+    if ((upload_type == WIGLE_UPLOAD) || (upload_type == ALL_UPLOAD)) {
       if (!wigle_already) {
         Serial.println("[UPLOAD] Uploading to WiGLE: " + filePath);
         wigle_ok = this->wigleUpload(filePath);
@@ -11818,7 +11863,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       }
     }
 
-    if ((upload_type == WDG_UPLOAD) || (upload_type == BOTH_UPLOAD)) {
+    if ((upload_type == WDG_UPLOAD) || (upload_type == ALL_UPLOAD)) {
       if (!wdg_already) {
         Serial.println("[UPLOAD] Uploading to WDG Wars: " + filePath);
         wdg_ok = this->wdgwarsUpload(filePath);
@@ -11833,13 +11878,30 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
       }
     }
 
+    if ((upload_type == WARDRIFT_UPLOAD) || (upload_type == ALL_UPLOAD)) {
+      if (!wrd_already) {
+        Serial.println("[UPLOAD] Uploading to Wardrift: " + filePath);
+        wrd_ok = this->wardriftUpload(filePath);
+        if (wrd_ok) {
+          this->writeSidecar(filePath, "wrd");
+          Serial.println("[UPLOAD] Wardrift upload succeeded");
+        } else {
+          Serial.println("[UPLOAD] Wardrift upload failed");
+        }
+      } else {
+        Serial.println("[UPLOAD] Wardrift already uploaded, skipping");
+      }
+    }
+
     bool result = false;
     if (upload_type == WIGLE_UPLOAD)
       result = wigle_ok;
     else if (upload_type == WDG_UPLOAD)
       result = wdg_ok;
-    else if (upload_type == BOTH_UPLOAD)
-      result = wigle_ok && wdg_ok;
+    else if (upload_type == WARDRIFT_UPLOAD)
+      result = wrd_ok;
+    else if (upload_type == ALL_UPLOAD)
+      result = wigle_ok && wdg_ok && wrd_ok;
 
     this->upload_active = false;
     return result;
@@ -12039,9 +12101,148 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     return ok;
   }
 
-  // Upload one log file to Wigle
-  bool WiFiScan::wigleUpload(String filePath) {
+  // PURE WARDRIVER Wardrift ingest: raw Wigle CSV straight to
+  // POST /v1/ingest/signals (X-API-Key). The server derives idempotency,
+  // assigns sequence numbers and parses rows — no JSON envelope, no clock,
+  // no hashes needed on our side (v2 firmware path).
+
+  bool WiFiScan::wardriftUpload(String filePath) {
+    #ifdef HAS_SCREEN
+    this->drawUploadProgress("Wardrift", 0);
+    #endif
+    delay(100);
+
+    String apiKey = settings_obj.loadSetting<String>(WRD_KEY_NAME);
+    if (apiKey.isEmpty()) {
+      #ifdef HAS_SCREEN
+      display_obj.clearScreen();
+      display_obj.showCenterText("No Wardrift key", TFT_HEIGHT / 2, true);
+      delay(2000);
+      #endif
+      Serial.println("[WRD] No Wardrift API key configured");
+      return false;
+    }
+
+    if (!SD.exists(filePath)) {
+      Serial.println("[WRD] File not found: " + filePath);
+      return false;
+    }
+    File f = SD.open(filePath);
+    if (!f) {
+      Serial.println("[WRD] Could not open: " + filePath);
+      return false;
+    }
+
+    // 10 MiB server cap (spec); our logs are KBs, but guard anyway.
+    const size_t fileSize = f.size();
+    if (fileSize == 0 || fileSize > 10485760) {
+      f.close();
+      Serial.println("[WRD] File empty or over 10 MiB, abort");
+      return false;
+    }
+
+    // File name for the optional X-File-Name display header.
+    String baseName = filePath;
+    int slash = baseName.lastIndexOf('/');
+    if (slash >= 0) baseName = baseName.substring(slash + 1);
+
+    client->setInsecure();
+    client->setTimeout(20000);
+    if (!client->connect(WARDRIFT_API_HOST, 443)) {
+      f.close();
+      #ifdef HAS_SCREEN
+      display_obj.clearScreen();
+      display_obj.showCenterText("WRD connect fail", TFT_HEIGHT / 2, true);
+      delay(2000);
+      #endif
+      Serial.println("[WRD] Failed to connect to " WARDRIFT_API_HOST);
+      return false;
+    }
+
+    client->println(String("POST ") + WARDRIFT_API_PATH + " HTTP/1.1");
+    client->println(String("Host: ") + WARDRIFT_API_HOST);
+    client->println("User-Agent: ESP32Uploader/1.0");
+    client->println("Accept: application/json");
+    client->println("X-API-Key: " + apiKey);
+    client->println("Content-Type: text/csv");
+    client->println("X-File-Name: " + baseName);
+    client->print("Content-Length: ");
+    client->println(fileSize);
+    client->println();
+
+    marauder::UploadStreamBuffer uploadBuffer;
+    if (!uploadBuffer) {
+      f.close();
+      client->stop();
+      Serial.println("[WRD] Could not allocate upload buffer");
+      return false;
+    }
+    size_t totalSent = 0;
+    while (f.available()) {
+      size_t n = f.read(uploadBuffer.data(), uploadBuffer.size());
+      totalSent += n;
+      client->write(uploadBuffer.data(), n);
+      #ifdef HAS_SCREEN
+      if (fileSize > 0)
+        this->drawUploadProgress("Wardrift", (uint8_t)((totalSent * 100) / fileSize));
+      #endif
+    }
+    client->flush();
+    f.close();
+
+    Serial.println("[WRD] Bytes sent: " + String(totalSent));
+
+    #ifdef HAS_SCREEN
+    this->drawUploadProgress("Wardrift", 100, true);
+    #endif
+
+    String response;
     bool gotAny = false;
+    unsigned long t = millis();
+    while (millis() - t < 20000) {
+      while (client->available()) {
+        gotAny = true;
+        char c = client->read();
+        Serial.print(c);
+        response += c;
+      }
+      if (gotAny && !client->connected()) break;
+      delay(10);
+    }
+    Serial.println();
+    client->stop();
+
+    String respTrunc = response.length() > 200 ? response.substring(0, 200) : response;
+    Serial.println("[WRD] Response: " + respTrunc);
+
+    // Synchronous receipt: accepted:true wins; duplicate:true means the
+    // server already has these exact bytes (idempotent by content hash).
+    bool ok = response.indexOf("\"accepted\":true") >= 0 ||
+              response.indexOf("\"duplicate\":true") >= 0;
+    if (!ok) {
+      Serial.println(response);
+      #ifdef HAS_SCREEN
+      display_obj.clearScreen();
+      display_obj.tft.setTextSize(1);
+      display_obj.tft.setTextColor(TFT_RED, TFT_BLACK);
+      display_obj.showCenterText("Wardrift Failed", TFT_HEIGHT / 3, true);
+      delay(3000);
+      #else
+      delay(1000);
+      #endif
+    } else {
+      #ifdef HAS_SCREEN
+      display_obj.clearScreen();
+      display_obj.showCenterText("Wardrift OK", TFT_HEIGHT / 2, true);
+      #endif
+      delay(1000);
+    }
+
+    return ok;
+  }
+
+  // Upload one log file to Wigle
+  bool WiFiScan::wigleUpload(String filePath) {    bool gotAny = false;
 
     #ifdef HAS_SCREEN
     this->drawUploadProgress("WiGLE", 0); // GCOVR_EXCL_LINE

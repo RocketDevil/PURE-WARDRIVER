@@ -38,6 +38,7 @@ https://www.online-utility.org/image/convert/to/XBM
 
 #include "settings.h"
 #include "CommandLine.h"
+#include "SwarmNode.h"
 // Pure Wardrive: ReconMission removed.
 #include "lang_var.h"
 
@@ -456,6 +457,9 @@ void setup()
 
   cli_obj.RunSetup();
 
+  // PURE WARDRIVER Swarm node (NVS load only; BLE + resume happen in tick).
+  swarm_obj.begin();
+
   #ifdef MARAUDER_CARDPUTER_ADV
     USBSerial.println(F("[BOOT] setup done"));
     neopixelWrite(21, 0, 24, 0);
@@ -493,6 +497,7 @@ void loop()
   // Update all of our objects
   cli_obj.main(currentTime);
   wifi_scan_obj.main(currentTime);
+  swarm_obj.main(currentTime);
   // Pure Wardrive: ReconMission removed.
 
   #ifdef HAS_T_DONGLE_DISPLAY

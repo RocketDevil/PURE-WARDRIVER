@@ -18,6 +18,7 @@
 #endif
 
 #define WDG_KEY_NAME       "wdg_key"   // WDG Wars API key (String)
+#define WRD_KEY_NAME       "wrd_key"   // Wardrift API key (String)
 #define SAVED_WIFI_KEY_NAME "SavedWiFi"
 #define MAX_SAVED_WIFI_PROFILES 5
 #define GEOFENCES_KEY_NAME "Geofences"
@@ -53,11 +54,14 @@ class Settings {
       bool  EnableLED     = true;
       bool  EPDeauth      = false;
       bool  ChanHop       = false;
+      bool  Swarm         = false;
+      bool  LogNoFix      = false;
       String ClientSSID   = "";
       String ClientPW     = "";
       String wu           = "";
       String wt           = "";
       String wdg_key      = "";
+      String wrd_key      = "";
       String Region       = "EU";
     } _cache;
 
@@ -68,8 +72,7 @@ class Settings {
     // hex-encoded with "PW$" prefix. This is obfuscation, NOT encryption —
     // it keeps casual SPIFFS dumps from leaking keys in plaintext.
     // Values without the prefix are treated as legacy plaintext.
-    static bool _isSecretKey(const char* key);
-    static String _obfuscateSecret(const String& plain);
+    static bool _isSecretKey(const char* key);    static String _obfuscateSecret(const String& plain);
     static String _deobfuscateSecret(const String& stored);
 
   public:

@@ -3,6 +3,7 @@
 #include "CommandLine.h"
 #include "OwnedListLifecycle.h"
 #include "lang_var.h"
+#include "SwarmNode.h"
 
 #ifdef HAS_SCREEN
 
@@ -1258,11 +1259,11 @@ void MenuFunctions::battery2(bool initial)
 
 void MenuFunctions::updateStatusBar()
 {
-  // PURE WARDRIVER: home draws its own status row.
-  #ifdef HAS_FULL_SCREEN
-    if (current_menu == &mainMenu)
-      return;
-  #endif
+  // PURE WARDRIVER: home draws its own status row (WARDRIVE/SWARM/BAT).
+  // Unconditional: on every screen size the status bar must never paint
+  // over the home top line (e.g. live "CH:" covering the swarm state).
+  if (current_menu == &mainMenu)
+    return;
   display_obj.tft.setTextSize(1);
 
   bool status_changed = false;
@@ -1723,7 +1724,7 @@ bool MenuFunctions::isKeyPressed(char c)
 
       for (int i = 0; i < sd_obj.sd_files->size(); i++) {
         if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
-          if (!sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
+          if (!sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wrd") && !sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
             String fname = sd_obj.sd_files->get(i);
             this->addNodes(&uploadLogsMenu, fname.c_str(), TFTCYAN, 0, [this, fname]() {
               sd_obj.selected_file_name = fname;
@@ -1809,8 +1810,86 @@ bool MenuFunctions::isKeyPressed(char c)
     });
   }
 
-  void MenuFunctions::buildFileActionMenu(const String& filename) {
-    fileActionMenu.list->clear();
+  // PURE WARDRIVER: shared bulk-upload bodies so WiGLE/WDGWars/Wardrift/All
+  // stay identical everywhere (single file, all files, selected file).
+  void MenuFunctions::uploadBulkFiles(uint8_t uploadType, const char* okLabel, const char* failLabel) {
+    display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    if (settings_obj.getSavedWifiCount() == 0) {
+      display_obj.clearScreen();
+      display_obj.tft.setTextWrap(true);
+      display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+      display_obj.tft.println("WiFi Credentials Empty.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      return;
+    }
+    if (!wifi_scan_obj.joinSavedWiFi(true)) {
+      display_obj.clearScreen();
+      display_obj.tft.setTextWrap(true);
+      display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+      display_obj.tft.println("Could not connect to WiFi.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      return;
+    }
+    delay(1000);
+    for (int i = 0; i < sd_obj.sd_files->size(); i++) {
+      if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
+        if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wrd") && !sd_obj.sd_files->get(i).endsWith(".wrd") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
+          Serial.println("Uploading " + sd_obj.sd_files->get(i) + "...");
+          if (wifi_scan_obj.uploadFile("/" + sd_obj.sd_files->get(i), true, uploadType)) {
+            display_obj.clearScreen();
+            display_obj.showCenterText(okLabel, TFT_HEIGHT / 2);
+          } else {
+            display_obj.clearScreen();
+            display_obj.showCenterText(failLabel, TFT_HEIGHT / 2);
+          }
+        }
+      }
+    }
+    WiFi.disconnect(true);
+    delay(100);
+    wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
+  }
+
+  void MenuFunctions::uploadSelectedFile(uint8_t uploadType, const char* okLabel, const char* failLabel) {
+    display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+
+    if (settings_obj.getSavedWifiCount() == 0) {
+      display_obj.clearScreen();
+      display_obj.tft.setTextWrap(true);
+      display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+      display_obj.tft.println("WiFi Credentials Empty.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      return;
+    }
+    if (!wifi_scan_obj.joinSavedWiFi(true)) {
+      display_obj.clearScreen();
+      display_obj.tft.setTextWrap(true);
+      display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
+      display_obj.tft.println("Could not connect to WiFi.");
+      display_obj.tft.println("Returning...");
+      display_obj.tft.setTextWrap(false);
+      return;
+    }
+    delay(1000);
+    Serial.println("Uploading " + sd_obj.selected_file_name + "...");
+    if (wifi_scan_obj.uploadFile("/" + sd_obj.selected_file_name, true, uploadType)) {
+      display_obj.clearScreen();
+      display_obj.showCenterText(okLabel, TFT_HEIGHT / 2, true);
+    } else {
+      display_obj.clearScreen();
+      display_obj.showCenterText(failLabel, TFT_HEIGHT / 2, true);
+    }
+
+    WiFi.disconnect(true);
+    delay(100);
+    wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
+  }
+
+  void MenuFunctions::buildFileActionMenu(const String& filename) {    fileActionMenu.list->clear();
     delete fileActionMenu.list;
     fileActionMenu.list = new LinkedList<MenuNode>();
     fileActionMenu.name = filename.c_str();
@@ -1828,8 +1907,12 @@ bool MenuFunctions::isKeyPressed(char c)
       this->doUpload(filename, WDG_UPLOAD, "WDGWars");
     });
 
-    this->addNodes(&fileActionMenu, "Upload both", TFTYELLOW, 0, [this, filename]() {
-      this->doUpload(filename, BOTH_UPLOAD, "Both");
+    this->addNodes(&fileActionMenu, "Upload to Wardrift", TFTCYAN, 0, [this, filename]() {
+      this->doUpload(filename, WARDRIFT_UPLOAD, "Wardrift");
+    });
+
+    this->addNodes(&fileActionMenu, "Upload all", TFTYELLOW, 0, [this, filename]() {
+      this->doUpload(filename, ALL_UPLOAD, "All");
     });
 
     this->addNodes(&fileActionMenu, "Delete", TFTRED, 0, [this, filename]() {
@@ -1838,6 +1921,7 @@ bool MenuFunctions::isKeyPressed(char c)
       sd_obj.removeFile("/" + filename);
       sd_obj.removeFile("/" + filename + ".wdg");
       sd_obj.removeFile("/" + filename + ".wigle");
+      sd_obj.removeFile("/" + filename + ".wrd");
       delay(500);
       this->buildUploadFileMenu();
       this->changeMenu(&uploadLogsMenu, true);
@@ -3241,7 +3325,7 @@ void MenuFunctions::RunSetup()
           delay(1000);
           for (int i = 0; i < sd_obj.sd_files->size(); i++) {
             if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
-              if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
+              if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wrd") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
                 Serial.println("Uploading " + sd_obj.sd_files->get(i) + "...");
                 if (wifi_scan_obj.uploadFile("/" + sd_obj.sd_files->get(i), true, WIGLE_UPLOAD)) {
                   display_obj.clearScreen();
@@ -3287,7 +3371,7 @@ void MenuFunctions::RunSetup()
           delay(1000);
           for (int i = 0; i < sd_obj.sd_files->size(); i++) {
             if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
-              if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
+              if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".wrd") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
                 Serial.println("Uploading " + sd_obj.sd_files->get(i) + "...");
                 if (wifi_scan_obj.uploadFile("/" + sd_obj.sd_files->get(i), true, WDG_UPLOAD)) {
                   display_obj.clearScreen();
@@ -3309,48 +3393,14 @@ void MenuFunctions::RunSetup()
 
       this->changeMenu(uploadAllMenu.parentMenu, true);
     });
-    this->addNodes(&uploadAllMenu, "Both", TFTLIGHTGREY, 0, [this]() {
-      display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    this->addNodes(&uploadAllMenu, "Wardrift", TFTLIGHTGREY, 0, [this]() {
+      this->uploadBulkFiles(WARDRIFT_UPLOAD, "Wardrift OK", "Wardrift failed");
+      delay(2000);
 
-      if (settings_obj.getSavedWifiCount() == 0) {
-        display_obj.clearScreen();
-        display_obj.tft.setTextWrap(true);
-        display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
-        display_obj.tft.println("WiFi Credentials Empty.");
-        display_obj.tft.println("Returning...");
-        display_obj.tft.setTextWrap(false);
-      }
-      else {
-        if (!wifi_scan_obj.joinSavedWiFi(true)) {
-          display_obj.clearScreen();
-          display_obj.tft.setTextWrap(true);
-          display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
-          display_obj.tft.println("Could not connect to WiFi.");
-          display_obj.tft.println("Returning...");
-          display_obj.tft.setTextWrap(false);
-        }
-        else {
-          delay(1000);
-          for (int i = 0; i < sd_obj.sd_files->size(); i++) {
-            if (sd_obj.sd_files->get(i).startsWith("wardrive_") || sd_obj.sd_files->get(i).startsWith("wigle-")) {
-              if (!sd_obj.sd_files->get(i).endsWith(".wigle") && !sd_obj.sd_files->get(i).endsWith(".wdg") && !sd_obj.sd_files->get(i).endsWith(".gpx")) {
-                Serial.println("Uploading " + sd_obj.sd_files->get(i) + "...");
-                if (wifi_scan_obj.uploadFile("/" + sd_obj.sd_files->get(i), true, BOTH_UPLOAD)) {
-                  display_obj.clearScreen();
-                  display_obj.showCenterText("Upload OK", TFT_HEIGHT / 2);
-                } else {
-                  display_obj.clearScreen();
-                  display_obj.showCenterText("Upload failed", TFT_HEIGHT / 2);
-                }
-              }
-            }
-          }
-          WiFi.disconnect(true);
-          delay(100);
-          wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
-        }
-      }
-
+      this->changeMenu(uploadAllMenu.parentMenu, true);
+    });
+    this->addNodes(&uploadAllMenu, "All", TFTLIGHTGREY, 0, [this]() {
+      this->uploadBulkFiles(ALL_UPLOAD, "Upload OK", "Upload failed");
       delay(2000);
 
       this->changeMenu(uploadAllMenu.parentMenu, true);
@@ -3477,43 +3527,14 @@ void MenuFunctions::RunSetup()
 
       this->changeMenu(&actionMenu, true);
     });
-    this->addNodes(&actionMenu, "Both", TFTLIGHTGREY, 0, [this]() {
-      display_obj.tft.setTextColor(TFT_CYAN, TFT_BLACK);
+    this->addNodes(&actionMenu, "Wardrift", TFTLIGHTGREY, 0, [this]() {
+      this->uploadSelectedFile(WARDRIFT_UPLOAD, "Wardrift OK", "Wardrift failed");
+      delay(2000);
 
-      if (settings_obj.getSavedWifiCount() == 0) {
-        display_obj.clearScreen();
-        display_obj.tft.setTextWrap(true);
-        display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
-        display_obj.tft.println("WiFi Credentials Empty.");
-        display_obj.tft.println("Returning...");
-        display_obj.tft.setTextWrap(false);
-      }
-      else {
-        if (!wifi_scan_obj.joinSavedWiFi(true)) {
-          display_obj.clearScreen();
-          display_obj.tft.setTextWrap(true);
-          display_obj.tft.setCursor(0, SCREEN_HEIGHT / 3);
-          display_obj.tft.println("Could not connect to WiFi.");
-          display_obj.tft.println("Returning...");
-          display_obj.tft.setTextWrap(false);
-        }
-        else {
-          delay(1000);
-          Serial.println("Uploading " + sd_obj.selected_file_name + "...");
-          if (wifi_scan_obj.uploadFile("/" + sd_obj.selected_file_name, true, BOTH_UPLOAD)) {
-            display_obj.clearScreen();
-            display_obj.showCenterText("Upload OK", TFT_HEIGHT / 2, true);
-          } else {
-            display_obj.clearScreen();
-            display_obj.showCenterText("Upload failed", TFT_HEIGHT / 2, true);
-          }
-
-          WiFi.disconnect(true);
-          delay(100);
-          wifi_scan_obj.StartScan(WIFI_SCAN_OFF, TFT_RED);
-        }
-      }
-
+      this->changeMenu(&actionMenu, true);
+    });
+    this->addNodes(&actionMenu, "All", TFTLIGHTGREY, 0, [this]() {
+      this->uploadSelectedFile(ALL_UPLOAD, "Upload OK", "Upload failed");
       delay(2000);
 
       this->changeMenu(&actionMenu, true);
@@ -5352,6 +5373,19 @@ void MenuFunctions::displayHomeMenu() {
     display_obj.tft.setTextColor(TFT_CYAN);
     display_obj.tft.setCursor(4, 4);
     display_obj.tft.print("WARDRIVE");
+    // PURE WARDRIVER Swarm state: OFF / searching (--) / linked (ON).
+    if (swarm_obj.isEnabled()) {
+      if (swarm_obj.linkState() == SwarmNode::SWARM_LINKED) {
+        display_obj.tft.setTextColor(TFT_GREEN);
+        display_obj.tft.print(" SWARM ON");
+      } else {
+        display_obj.tft.setTextColor(TFT_YELLOW);
+        display_obj.tft.print(" SWARM --");
+      }
+    } else {
+      display_obj.tft.setTextColor(TFT_DARKGREY);
+      display_obj.tft.print(" SWARM OFF");
+    }
     #ifdef HAS_BATTERY
       int8_t lvl = battery_obj.getBatteryLevel();
       String batt = (lvl >= 0) ? ("BAT " + String(lvl) + "%") : "BAT --";

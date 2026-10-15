@@ -68,6 +68,69 @@ static JsonObject ensureRegionSetting(DynamicJsonDocument& json) {
   return setting;
 }
 
+// PURE WARDRIVER: Swarm kam später dazu — gleiche Migration wie Region.
+static JsonObject findSwarmSetting(DynamicJsonDocument& json) {
+  for (JsonObject setting : json["Settings"].as<JsonArray>()) {
+    if (strcmp(setting["name"] | "", "Swarm") == 0)
+      return setting;
+  }
+  return JsonObject();
+}
+
+static JsonObject ensureSwarmSetting(DynamicJsonDocument& json) {
+  JsonObject setting = findSwarmSetting(json);
+  if (!setting.isNull()) return setting;
+  setting = json["Settings"].as<JsonArray>().createNestedObject();
+  setting["name"] = "Swarm";
+  setting["type"] = "bool";
+  setting["value"] = false;
+  setting["range"]["min"] = false;
+  setting["range"]["max"] = true;
+  return setting;
+}
+
+// PURE WARDRIVER: LogNoFix kam später dazu — gleiche Migration.
+static JsonObject findLogNoFixSetting(DynamicJsonDocument& json) {
+  for (JsonObject setting : json["Settings"].as<JsonArray>()) {
+    if (strcmp(setting["name"] | "", "LogNoFix") == 0)
+      return setting;
+  }
+  return JsonObject();
+}
+
+static JsonObject ensureLogNoFixSetting(DynamicJsonDocument& json) {
+  JsonObject setting = findLogNoFixSetting(json);
+  if (!setting.isNull()) return setting;
+  setting = json["Settings"].as<JsonArray>().createNestedObject();
+  setting["name"] = "LogNoFix";
+  setting["type"] = "bool";
+  setting["value"] = false;
+  setting["range"]["min"] = false;
+  setting["range"]["max"] = true;
+  return setting;
+}
+
+// PURE WARDRIVER: Wardrift key — same secret handling as the other keys.
+static JsonObject findWrdKeySetting(DynamicJsonDocument& json) {
+  for (JsonObject setting : json["Settings"].as<JsonArray>()) {
+    if (strcmp(setting["name"] | "", WRD_KEY_NAME) == 0)
+      return setting;
+  }
+  return JsonObject();
+}
+
+static JsonObject ensureWrdKeySetting(DynamicJsonDocument& json) {
+  JsonObject setting = findWrdKeySetting(json);
+  if (!setting.isNull()) return setting;
+  setting = json["Settings"].as<JsonArray>().createNestedObject();
+  setting["name"] = WRD_KEY_NAME;
+  setting["type"] = "String";
+  setting["value"] = "";
+  setting["range"]["min"] = "";
+  setting["range"]["max"] = "";
+  return setting;
+}
+
 static bool writeSettingsDocument(DynamicJsonDocument& json, String& cache) {
   File file = SPIFFS.open("/settings.json", FILE_WRITE);
   if (!file) return false;
@@ -93,7 +156,8 @@ bool Settings::_isSecretKey(const char* key) {
   return strcmp(key, "ClientPW") == 0 ||
          strcmp(key, "wu") == 0 ||
          strcmp(key, "wt") == 0 ||
-         strcmp(key, WDG_KEY_NAME) == 0;
+         strcmp(key, WDG_KEY_NAME) == 0 ||
+         strcmp(key, WRD_KEY_NAME) == 0;
 }
 
 static uint8_t _pwKeyByte(size_t pos) {
@@ -184,6 +248,10 @@ void Settings::_buildCache() {
       _cache.EPDeauth = json["Settings"][i]["value"].as<bool>();
     else if (strcmp(name, "ChanHop") == 0)
       _cache.ChanHop = json["Settings"][i]["value"].as<bool>();
+    else if (strcmp(name, "Swarm") == 0)
+      _cache.Swarm = json["Settings"][i]["value"].as<bool>();
+    else if (strcmp(name, "LogNoFix") == 0)
+      _cache.LogNoFix = json["Settings"][i]["value"].as<bool>();
     else if (strcmp(name, "ClientSSID") == 0)
       _cache.ClientSSID = json["Settings"][i]["value"].as<String>();
     else if (strcmp(name, "ClientPW") == 0)
@@ -194,6 +262,10 @@ void Settings::_buildCache() {
       loadSecret(name, i, _cache.wt);
     else if (strcmp(name, WDG_KEY_NAME) == 0)
       loadSecret(name, i, _cache.wdg_key);
+    else if (strcmp(name, WRD_KEY_NAME) == 0)
+      loadSecret(name, i, _cache.wrd_key);
+    else if (strcmp(name, WRD_KEY_NAME) == 0)
+      loadSecret(name, i, _cache.wrd_key);
     else if (strcmp(name, "Region") == 0)
       _cache.Region = json["Settings"][i]["value"].as<String>();
   }
@@ -254,6 +326,18 @@ bool Settings::begin() {
   }
   if (findRegionSetting(jsonBuffer).isNull()) {
     ensureRegionSetting(jsonBuffer);
+    settings_changed = true;
+  }
+  if (findSwarmSetting(jsonBuffer).isNull()) {
+    ensureSwarmSetting(jsonBuffer);
+    settings_changed = true;
+  }
+  if (findLogNoFixSetting(jsonBuffer).isNull()) {
+    ensureLogNoFixSetting(jsonBuffer);
+    settings_changed = true;
+  }
+  if (findWrdKeySetting(jsonBuffer).isNull()) {
+    ensureWrdKeySetting(jsonBuffer);
     settings_changed = true;
   }
 
@@ -333,6 +417,8 @@ template <> String Settings::loadSetting<String>(const char* key) {
     return _cache.wt;
   if (strcmp(key, WDG_KEY_NAME) == 0)
     return _cache.wdg_key;
+  if (strcmp(key, WRD_KEY_NAME) == 0)
+    return _cache.wrd_key;
   if (strcmp(key, "Region") == 0)
     return _cache.Region;
 
@@ -376,6 +462,10 @@ template <> bool Settings::loadSetting<bool>(const char* key) {
     return _cache.EPDeauth;
   if (strcmp(key, "ChanHop") == 0)
     return _cache.ChanHop;
+  if (strcmp(key, "Swarm") == 0)
+    return _cache.Swarm;
+  if (strcmp(key, "LogNoFix") == 0)
+    return _cache.LogNoFix;
 
   // Unknown bool key: fall back to JSON so the setting can be auto-created.
   DynamicJsonDocument json(JSON_SETTING_SIZE);
@@ -481,6 +571,10 @@ template <> bool Settings::saveSetting<bool>(const char* key, bool value) {
         _cache.EPDeauth = value;
       else if (strcmp(key, "ChanHop") == 0)
         _cache.ChanHop = value;
+      else if (strcmp(key, "Swarm") == 0)
+        _cache.Swarm = value;
+      else if (strcmp(key, "LogNoFix") == 0)
+        _cache.LogNoFix = value;
 
       this->printJsonSettings(settings_string);
 
@@ -538,6 +632,8 @@ template <> bool Settings::saveSetting<bool>(const char* key, String value) {
         _cache.wt = value;
       else if (strcmp(key, WDG_KEY_NAME) == 0)
         _cache.wdg_key = value;
+      else if (strcmp(key, WRD_KEY_NAME) == 0)
+        _cache.wrd_key = value;
       else if (strcmp(key, "Region") == 0)
         _cache.Region = value;
 
@@ -729,6 +825,24 @@ bool Settings::createDefaultSettings(fs::FS &fs, bool spec, uint8_t index, const
     jsonBuffer["Settings"][13]["value"] = "EU";
     jsonBuffer["Settings"][13]["range"]["min"] = "";
     jsonBuffer["Settings"][13]["range"]["max"] = "";
+
+    jsonBuffer["Settings"][14]["name"] = "Swarm";
+    jsonBuffer["Settings"][14]["type"] = "bool";
+    jsonBuffer["Settings"][14]["value"] = false;
+    jsonBuffer["Settings"][14]["range"]["min"] = false;
+    jsonBuffer["Settings"][14]["range"]["max"] = true;
+
+    jsonBuffer["Settings"][15]["name"] = "LogNoFix";
+    jsonBuffer["Settings"][15]["type"] = "bool";
+    jsonBuffer["Settings"][15]["value"] = false;
+    jsonBuffer["Settings"][15]["range"]["min"] = false;
+    jsonBuffer["Settings"][15]["range"]["max"] = true;
+
+    jsonBuffer["Settings"][16]["name"] = WRD_KEY_NAME;
+    jsonBuffer["Settings"][16]["type"] = "String";
+    jsonBuffer["Settings"][16]["value"] = "";
+    jsonBuffer["Settings"][16]["range"]["min"] = "";
+    jsonBuffer["Settings"][16]["range"]["max"] = "";
 
     serializeJson(jsonBuffer, settingsFile);
     serializeJson(jsonBuffer, settings_string);

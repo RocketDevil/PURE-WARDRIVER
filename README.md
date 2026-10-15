@@ -19,6 +19,10 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
   GPS accuracy; GPS row is green on fix, red without
 - Two-tap STOP: first tap shows SURE?, second tap ends the scan
   (stray taps can't kill a session)
+- Optional last-known-position logging (LogNoFix, max 10 min old) for
+  GPS dead zones like garages/malls — off by default
+- Upload to WiGLE, WDGWars and Wardrift (singles or all three at once);
+  Wardrift uses its signals API with an API key (`wrd_key`)
 
 ## First run
 

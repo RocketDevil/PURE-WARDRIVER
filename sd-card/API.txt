@@ -2,6 +2,8 @@
 # then adjust values). Lines starting with # are ignored.
 # wdg_key: your WDGWars API key (profile on wdgwars.pl).
 # wu/wt:   your WiGLE username / API token.
+# wrd_key: your Wardrift API key (character-bound key).
 wdg_key=YOUR_WDGWARS_KEY
 wu=YOUR_WIGLE_USERNAME
 wt=YOUR_WIGLE_TOKEN
+wrd_key=YOUR_WARDRIFT_KEY

@@ -594,11 +594,32 @@ void GpsInterface::setGPSInfo() {
 
   this->accuracy = 2.5 * ((float)nmea.getHDOP()/10);
 
+  if (this->good_fix) {
+    this->last_lat = this->lat;
+    this->last_lon = this->lon;
+    this->last_acc = this->accuracy;
+    this->last_dt = this->datetime;
+    this->last_alt = this->altf;
+    this->last_fix_ms = millis();
+  }
+
   //nmea.clear();
 }
 
 float GpsInterface::getAccuracy() {
   return this->accuracy;
+}
+
+bool GpsInterface::getLastKnown(String& lat, String& lon, float& acc,
+                                String& dt, float& alt, uint32_t maxAgeMs) {
+  if (this->last_fix_ms == 0) return false;
+  if ((millis() - this->last_fix_ms) > maxAgeMs) return false;
+  lat = this->last_lat;
+  lon = this->last_lon;
+  acc = this->last_acc;
+  dt = this->last_dt;
+  alt = this->last_alt;
+  return true;
 }
 
 String GpsInterface::getLat() {

@@ -34,6 +34,9 @@ struct nmea_sentence_t {
 
 void gps_nmea_notimp(MicroNMEA& nmea);
 
+// PURE WARDRIVER: last-known fix older than this is never logged.
+#define LAST_KNOWN_MAX_AGE_MS (10UL * 60UL * 1000UL)
+
 class GpsInterface {
   public:
     void begin();
@@ -50,6 +53,10 @@ class GpsInterface {
     int32_t getLonInt();
     float getAlt();
     float getAccuracy();
+    // PURE WARDRIVER: last known fix for optional fix-less logging
+    // (LogNoFix). True + data if a fix existed within maxAgeMs.
+    bool getLastKnown(String& lat, String& lon, float& acc, String& dt,
+                      float& alt, uint32_t maxAgeMs);
     String getDatetime();
     String getText();
     int getTextQueueSize();
@@ -100,6 +107,14 @@ class GpsInterface {
     float altf = 0.0;
     float accuracy = 0.0;
     String datetime = "";
+
+    // Last known fix (updated on every valid fix, never cleared).
+    String last_lat = "";
+    String last_lon = "";
+    float last_acc = 0.0;
+    String last_dt = "";
+    float last_alt = 0.0;
+    uint32_t last_fix_ms = 0;
     
     bool gps_enabled = false;
     bool good_fix = false;

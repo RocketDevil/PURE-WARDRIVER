@@ -1,0 +1,4 @@
+# Wardrift API key (character-bound key) for PURE WARDRIVER.
+# Copy to microSD as "wrd_key.txt" with just the key, nothing else.
+# Imported into obfuscated storage on boot, then deleted from SD.
+YOUR_WARDRIFT_KEY
