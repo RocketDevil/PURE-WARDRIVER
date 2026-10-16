@@ -291,6 +291,29 @@ void SwarmNode::teardownBle() {
 #endif
 }
 
+void SwarmNode::suspendForUpload() {
+  if (!isEnabled()) return;
+  _suspended = true;
+  teardownBle();
+#ifdef HAS_BT
+  // Full stack down: no advertising, no reconnects mid-upload.
+  // update() rebuilds everything once resumeFromUpload() clears the flag.
+  NimBLEDevice::deinit();
+#endif
+  s_pServer = nullptr;
+  s_pCmd = nullptr;
+  s_pResp = nullptr;
+  s_pStat = nullptr;
+  _bleUp = false;
+  _connected = false;
+  _proven = false;
+  // update() restarts advertising on its own once the upload is done.
+}
+
+void SwarmNode::resumeFromUpload() {
+  _suspended = false;
+}
+
 void SwarmNode::restartAdvertising() {
 #ifdef HAS_BT
   NimBLEAdvertising* adv = NimBLEDevice::getAdvertising();
@@ -708,6 +731,17 @@ void SwarmNode::startWardriveRemote() {
 
 void SwarmNode::main(uint32_t now) {
   if (!_begun) begin();
+  if (_suspended) {
+    // Upload running: keep BLE down even if the phone knocks.
+    if (_connected && s_pServer != nullptr) {
+#ifdef HAS_BT
+      s_pServer->disconnect(_connHandle);
+#endif
+      _connected = false;
+      _proven = false;
+    }
+    return;
+  }
   if (!isEnabled()) {
     teardownBle();
     _bleUp = false;

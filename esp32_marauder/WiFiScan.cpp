@@ -1,5 +1,8 @@
 #include "esp_random.h"
 #include "WiFiScan.h"
+#include "MenuFunctions.h"
+
+extern MenuFunctions menu_function_obj;
 // Pure Wardrive: ReconMission removed.
 #include "FoxHuntTarget.h"
 #include "BeaconFrame.h"
@@ -6340,18 +6343,21 @@ void WiFiScan::executeWarDrive() {
         this->wardrive_channel_index++;
 
         // PURE WARDRIVER: keep the status-bar channel live during wardrive
-        // (it otherwise freezes on the configured channel).
+        // (it otherwise freezes on the configured channel). Never paint
+        // over the home dashboard top row (WARDRIVE/SWARM/BAT live there).
         #ifdef HAS_SCREEN
           if (scan_channel != this->old_channel) {
             this->old_channel = scan_channel;
-            #ifdef HAS_FULL_SCREEN
-              display_obj.tft.fillRect(50, 0, (CHAR_WIDTH / 2) * 8, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
-              display_obj.tft.drawString("CH: " + (String)scan_channel, 50, 0, 2);
-            #endif
-            #ifdef HAS_MINI_SCREEN
-              display_obj.tft.fillRect(TFT_WIDTH/4, 0, CHAR_WIDTH * 6, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
-              display_obj.tft.drawString("CH:" + (String)scan_channel, TFT_WIDTH/4, 0, 1);
-            #endif
+            if (!menu_function_obj.homeDashboardActive()) {
+              #ifdef HAS_FULL_SCREEN
+                display_obj.tft.fillRect(50, 0, (CHAR_WIDTH / 2) * 8, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
+                display_obj.tft.drawString("CH: " + (String)scan_channel, 50, 0, 2);
+              #endif
+              #ifdef HAS_MINI_SCREEN
+                display_obj.tft.fillRect(TFT_WIDTH/4, 0, CHAR_WIDTH * 6, STATUS_BAR_WIDTH, STATUSBAR_COLOR);
+                display_obj.tft.drawString("CH:" + (String)scan_channel, TFT_WIDTH/4, 0, 1);
+              #endif
+            }
           }
         #endif
 
@@ -11840,6 +11846,14 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
                 (retry ? " (retry)" : ""));
     this->upload_active = true;
 
+    // PURE WARDRIVER: park Swarm BLE while WiFi TLS runs (shared radio).
+    swarm_obj.suspendForUpload();
+
+    // PURE WARDRIVER: flaky-link diagnostics + full radio power for uploads.
+    Serial.println("[UPLOAD] RSSI " + String(WiFi.RSSI()) + " dBm, heap " +
+                   String(esp_get_free_heap_size()));
+    WiFi.setSleep(WIFI_PS_NONE);
+
     bool wigle_already = !retry && this->sidecarExists(filePath, "wigle");
     bool wdg_already   = !retry && this->sidecarExists(filePath, "wdg");
     bool wrd_already   = !retry && this->sidecarExists(filePath, "wrd");
@@ -11903,8 +11917,43 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     else if (upload_type == ALL_UPLOAD)
       result = wigle_ok && wdg_ok && wrd_ok;
 
+    swarm_obj.resumeFromUpload();
     this->upload_active = false;
+    WiFi.setSleep(WIFI_PS_MIN_MODEM);
     return result;
+  }
+
+  // PURE WARDRIVER: resilient TLS connect for uploads — retry by name,
+  // then fall back to an explicitly resolved IPv4 (dodges flaky
+  // AAAA/DNS answers on some networks). Logs each step for diagnosis.
+  static bool tlsConnectWithRetry(WiFiClientSecure* client, const char* host,
+                                  const char* label) {
+    client->setInsecure();
+    for (int attempt = 0; attempt < 3; attempt++) {
+      client->setTimeout(8000);
+      if (client->connect(host, 443)) {
+        Serial.println(String("[TLS] ") + label + " connected (name try " +
+                       String(attempt + 1) + ")");
+        return true;
+      }
+      Serial.println(String("[TLS] ") + label + " name connect failed, retrying...");
+      client->stop();
+      delay(1000);
+    }
+    IPAddress ip;
+    if (WiFi.hostByName(host, ip)) {
+      Serial.println(String("[TLS] ") + label + " resolved " + ip.toString() +
+                     ", trying IP...");
+      client->setTimeout(8000);
+      if (client->connect(ip, 443)) {
+        Serial.println(String("[TLS] ") + label + " connected via IP");
+        return true;
+      }
+    } else {
+      Serial.println(String("[TLS] ") + label + " DNS failed");
+    }
+    client->stop();
+    return false;
   }
 
   // Upload one log file to WDG Wars.
@@ -11960,10 +12009,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.println("[WDG] File size: " + String(fileToUpload.size()));
     Serial.println("[WDG] Total length: " + String(totalLength));
 
-    client->setInsecure();
-    client->setTimeout(5000);
-
-    if (!client->connect("wdgwars.pl", 443)) {
+    if (!tlsConnectWithRetry(client, "wdgwars.pl", "WDG")) {
       fileToUpload.close();
       client->stop();
       #ifdef HAS_SCREEN
@@ -12148,7 +12194,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     client->setInsecure();
     client->setTimeout(20000);
-    if (!client->connect(WARDRIFT_API_HOST, 443)) {
+    if (!tlsConnectWithRetry(client, WARDRIFT_API_HOST, "WRD")) {
       f.close();
       #ifdef HAS_SCREEN
       display_obj.clearScreen();
@@ -12312,12 +12358,10 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
     Serial.print("File size: ");
     Serial.println(fileToUpload.size());
 
-    client->setInsecure();
-    client->setTimeout(5000);
+    client->stop();
 
-    if (!client->connect("api.wigle.net", 443)) {
+    if (!tlsConnectWithRetry(client, "api.wigle.net", "WIGLE")) {
       fileToUpload.close();
-      //delete client;
       client->stop();
       #ifdef HAS_SCREEN
       display_obj.clearScreen();
@@ -12335,6 +12379,7 @@ uint16_t WiFiScan::rssiToColor(int8_t rssi) {
 
     Serial.println("Finished encoding");
 
+    // HTTP request
     client->println("POST /api/v2/file/upload HTTP/1.1");
     client->println("Host: api.wigle.net");
     client->println("User-Agent: ESP32Uploader/1.0");

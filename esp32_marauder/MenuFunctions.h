@@ -310,6 +310,9 @@ class MenuFunctions
     // PURE WARDRIVER: true while home is shown during a running wardrive
     // (taps toggle stats/home, only STOP ends the session).
     bool show_home_during_scan = false;
+    // PURE WARDRIVER: true while the home dashboard owns the screen
+    // (its top row must not be overpainted, e.g. by live channel info).
+    bool homeDashboardActive() { return show_home_during_scan && (current_menu == &mainMenu); }
     // PURE WARDRIVER: auto-dim state (backlight only, logging continues).
     uint32_t last_ui_activity_ms = 0;
     bool screen_dimmed = false;

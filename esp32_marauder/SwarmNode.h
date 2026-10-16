@@ -30,6 +30,11 @@ public:
 
   bool isEnabled();
   LinkState linkState();
+  // PURE WARDRIVER: park BLE (stop advertising + drop link) while the
+  // WiFi TLS upload runs — shared radio, handshake would starve.
+  // Advertising resumes by itself on the next tick.
+  void suspendForUpload();
+  void resumeFromUpload();
 
   // Sighting hooks (called from the wardrive capture paths).
   void reportAP(const String& ssid, const String& bssid, uint8_t channel,
@@ -99,6 +104,7 @@ private:
 
   bool _begun = false;
   bool _bleUp = false;
+  bool _suspended = false;  // upload running: keep the whole BLE stack down
   bool _connected = false;
   bool _proven = false;  // hello accepted on this link
   uint16_t _connHandle = 0;
