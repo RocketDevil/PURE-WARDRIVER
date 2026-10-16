@@ -491,7 +491,40 @@ void SwarmNode::handleLine(const String& line) {
     return;
   }
 
+  // App scan commands (no payload): wardrive = 2.4 GHz WiFi,
+  // wardrive5g = 5 GHz WiFi, btwardrive = BLE only, wardriveall = all,
+  // stopscan = stop. Stage 1 runs the full wardrive schedule for every
+  // start (no band-split loop yet); each start bumps the session.
+  if (sub == "wardrive" || sub == "wardrive5g" || sub == "btwardrive" ||
+      sub == "wardriveall" || sub == "stopscan") {
+    uint8_t m = 0;
+    if (sub == "wardrive" || sub == "wardrive5g") m = 1;
+    else if (sub == "btwardrive") m = 2;
+    else if (sub == "wardriveall") m = 3;
+    bool scanning = (wifi_scan_obj.currentScanMode == WIFI_SCAN_WAR_DRIVE);
+    if (m == 0) {
+      _runMask = 0;
+      saveRun();
+      Serial.println(F("[SWARM] stopscan"));
+      sendLine("RSP:stopscan:OK");
+      sendStatus("STATUS:1:Ready");
+      stopWardriveRemote();
+    } else {
+      bool changed = (m != _runMask) || !scanning;
+      _runSession++;
+      _runMask = m;
+      saveRun();
+      Serial.println(String(F("[SWARM] ")) + sub + " session=" + _runSession);
+      sendLine("RSP:" + sub + ":OK");
+      sendStatus("STATUS:2:Busy");
+      if (changed) startWardriveRemote();
+    }
+    sendHeartbeat();
+    return;
+  }
+
   sendLine("RSP:" + sub + ":ERROR:unknown command");
+  Serial.println(String(F("[SWARM] unknown cmd: ")) + sub + " args=" + payload);
   sendHeartbeat();
 }
 
@@ -668,7 +701,7 @@ void SwarmNode::reportAP(const String& ssid, const String& bssid,
   if (!isEnabled() || _runMask == 0) return;
   uint32_t now = millis();
   String mac = bssid;
-  mac.toLowerCase();
+  mac.toUpperCase();  // app drops lines with badly formed MACs; spec shows AA:BB:CC form
   if (dedupHit(_dedupAP, SWARM_DEDUP_AP, mac.c_str(), now, 300000)) return;
   Sighting s;
   s.seq = _seqNext++;
@@ -687,7 +720,7 @@ void SwarmNode::reportBT(const String& name, const String& mac, int rssi) {
   if (!isEnabled() || _runMask == 0) return;
   uint32_t now = millis();
   String m = mac;
-  m.toLowerCase();
+  m.toUpperCase();  // see reportAP: MAC form matters to the app
   if (dedupHit(_dedupBT, SWARM_DEDUP_BT, m.c_str(), now, 30000)) return;
   Sighting s;
   s.seq = _seqNext++;
