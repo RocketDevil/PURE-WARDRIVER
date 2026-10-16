@@ -39,9 +39,11 @@ device (main target is the Marauder V8, more devices added over time):
    wdg_key=YOUR_WDGWARS_KEY
    wu=YOUR_WIGLE_USERNAME
    wt=YOUR_WIGLE_TOKEN
+   wrd_key=YOUR_WARDRIFT_KEY
    ```
-   or as three single-value files (same effect):
-   `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`
+   or as single-value files (same effect):
+   `wdg_key.txt`, `wigle_api_name.txt`, `wigle_api_token.txt`,
+   `wrd_key.txt`
    (each file holds just the key, nothing else).
    Untouched `YOUR_...` placeholders are ignored by the firmware.
 2. Power on: the firmware imports the API keys and WiFi credentials into
@@ -54,6 +56,9 @@ device (main target is the Marauder V8, more devices added over time):
 4. Press **SCAN** to start logging (`/wardrive_N.csv` on SD, WigleWifi-1.6).
 5. Press **STOP** twice to stop (first tap shows SURE? as pocket-press guard).
 6. Press **SYNC**, pick a log file, choose WiGLE / WDGWars / Wardrift / all.
+7. Optional, under MENU → Device → Settings: **Region** (EU/US channel
+   plan), **Swarm** (phone-linked wardriving node), **LogNoFix** (log with
+   last-known position in GPS dead zones).
 
 ## Hardware
 
