@@ -4,12 +4,13 @@
 
 <p align="center"><img alt="PURE WARDRIVER logo" src="pictures/pure-wardriver-logo.png" width="300"></p>
 <p align="center">
-  <b>Pure wardriving firmware for the ESP32 Marauder V8 — no pentest tools, just wardriving.</b>
+  <b>Pure wardriving firmware for ESP32 boards — no pentest tools, just wardriving.</b>
 </p>
 
 ## What it is
 
-PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
+PURE WARDRIVER turns a compatible ESP32 board into a dedicated wardriving
+device (main target is the Marauder V8, more devices added over time):
 
 - **SCAN** — WiFi + BLE wardriving with GPS logging (Wigle-compatible CSV)
 - **SYNC** — upload log files to [WDGWars](https://wdgwars.pl), [WiGLE](https://wigle.net), or both
@@ -52,21 +53,19 @@ PURE WARDRIVER turns a Marauder V8 into a dedicated wardriving device:
 3. Wait for GPS fix.
 4. Press **SCAN** to start logging (`/wardrive_N.csv` on SD, WigleWifi-1.6).
 5. Press **STOP** twice to stop (first tap shows SURE? as pocket-press guard).
-6. Press **SYNC**, pick a log file, choose WDGWars / WiGLE / both.
+6. Press **SYNC**, pick a log file, choose WiGLE / WDGWars / Wardrift / all.
 
 ## Hardware
 
-PURE WARDRIVER is built primarily for the **Marauder V8**
-(ESP32-C5, touch display, GPS, SD) —
+Main target is the **Marauder V8** (ESP32-C5, touch display, GPS, SD) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-V8.bin)
-([all files](firmware/)).
+([all files](firmware/)). More devices are added over time:
 
-More devices are supported. Field-tested: **M5 Cardputer ADV**
-(keyboard instead of touch) —
+- Field-tested: **M5 Cardputer ADV** (keyboard instead of touch) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CP-ADV.bin).
 Feedback welcome!
 
-Just added (untested, no field tester yet): **NM-CYD-C5**
+- Just added (untested, no field tester yet): **NM-CYD-C5**
 (RockBase CYD, ESP32-C5, 2.8" touch) —
 [Firmware direct download](https://raw.githubusercontent.com/RocketDevil/PURE-WARDRIVER/main/firmware/Pure-Wardrive-CYD-C5.bin).
 Needs the external NM-ATGM336H GPS module for logging.
